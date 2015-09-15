@@ -39,12 +39,8 @@ namespace FormatCode {
 			if (!AreByteArraysEqual(codeBytes, encoding.GetBytes(codeStrRaw))) {
 				throw new Exception("Misdetected character encoding!");
 			}
-			StringBuilder codeSB = new StringBuilder(codeStrRaw).Replace("\r\n", "\n").Replace("\r", "\n");
-			bool fileEndsWithLineEnd = codeSB.Length >= 1 && codeSB[codeSB.Length - 1] == '\n';
-			if (!fileEndsWithLineEnd) {
-				codeSB.Append('\n');
-			}
-			string code = codeSB.ToString();
+			string code = new StringBuilder(codeStrRaw).Replace("\r\n", "\n").Replace("\r", "\n").ToString();
+			bool fileEndsWithLineEnd = code.Length >= 1 && code[code.Length - 1] == '\n';
 			int i = 0;
 			List<string> lines = new List<string>();
 			LineInfo prevLineInfo = null;
@@ -58,53 +54,53 @@ namespace FormatCode {
 
 			Func<int, char> peek = (offset) => {
 				int index = i + offset;
-				return index >= 0 && index < code.Length ? code[index] : (char)0;
+				return index >= 0 && index < code.Length ? code[index] : '\n';
 			};
 
 			while (i < code.Length) {
 				LineInfo lineInfo = new LineInfo();
 
-				while (code[i] == ' ' || code[i] == '\t') {
-					lineInfo.LeadingWhitespaceCount += code[i] == '\t' ? (TabSize - (lineInfo.LeadingWhitespaceCount % 4)) : 1;
+				while (peek(0) == ' ' || peek(0) == '\t') {
+					lineInfo.LeadingWhitespaceCount += peek(0) == '\t' ? (TabSize - (lineInfo.LeadingWhitespaceCount % 4)) : 1;
 					i++;
 				}
 
 				int lineBeefStart = i;
 
-				while (code[i] != '\n') {
-					if (i == lineBeefStart && code[i] == '#') { // Preprocessor directive
+				while (peek(0) != '\n') {
+					if (i == lineBeefStart && peek(0) == '#') { // Preprocessor directive
 						i++;
-						while (code[i] != '\n') i++;
+						while (peek(0) != '\n') i++;
 						lineInfo.IsPreprocessorDirective = true;
 					}
-					else if (code[i] == '/' && peek(1) == '/') { // Single line comment
+					else if (peek(0) == '/' && peek(1) == '/') { // Single line comment
 						lineInfo.EndsWithXmlDocComment = peek(2) == '/' && peek(3) != '/';
 						i += lineInfo.EndsWithXmlDocComment ? 3 : 2;
-						while (code[i] != '\n') i++;
+						while (peek(0) != '\n') i++;
 						lineInfo.EndsWithComment = true;
 					}
-					else if (code[i] == '/' && peek(1) == '*') { // Multi line comment
+					else if (peek(0) == '/' && peek(1) == '*') { // Multi line comment
 						i += 2;
-						while (!(code[i] == '*' && peek(1) == '/')) i++;
+						while (!(peek(0) == '*' && peek(1) == '/')) i++;
 						i += 2;
 						lineInfo.EndsWithComment = true;
 					}
-					else if (code[i] == '@' && peek(1) == '"') { // Verbatim string literal
+					else if (peek(0) == '@' && peek(1) == '"') { // Verbatim string literal
 						i += 2;
-						while (!(code[i] == '"' && peek(1) != '"')) i += code[i] == '"' ? 2 : 1;
+						while (!(peek(0) == '"' && peek(1) != '"')) i += peek(0) == '"' ? 2 : 1;
 						i++;
 					}
-					else if (code[i] == '"') { // String literal
+					else if (peek(0) == '"') { // String literal
 						i++;
-						while (code[i] != '"') i += code[i] == '\\' ? 2 : 1;
-						i++;
-					}
-					else if (code[i] == '\'') { // Character literal
-						i++;
-						while (code[i] != '\'') i += code[i] == '\\' ? 2 : 1;
+						while (peek(0) != '"') i += peek(0) == '\\' ? 2 : 1;
 						i++;
 					}
-					else if (code[i] == '\t' || code[i] == ' ') {
+					else if (peek(0) == '\'') { // Character literal
+						i++;
+						while (peek(0) != '\'') i += peek(0) == '\\' ? 2 : 1;
+						i++;
+					}
+					else if (peek(0) == '\t' || peek(0) == ' ') {
 						i++;
 					}
 					else {

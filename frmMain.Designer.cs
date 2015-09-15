@@ -71,7 +71,7 @@
 			this.AllowDrop = true;
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(220, 180);
+			this.ClientSize = new System.Drawing.Size(248, 180);
 			this.Controls.Add(this.lblTabSize);
 			this.Controls.Add(this.txtTabSize);
 			this.Controls.Add(this.chkRequireNewLineAtEnd);
