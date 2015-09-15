@@ -77,21 +77,21 @@ namespace FormatCode {
 						while (code[i] != '\n') i++;
 						lineInfo.IsPreprocessorDirective = true;
 					}
-					else if (i > 0 && code[i - 1] == '/' && code[i] == '/') { // Single line comment
-						lineInfo.EndsWithXmlDocComment = peek(1) == '/' && peek(2) != '/';
-						i++;
+					else if (code[i] == '/' && peek(1) == '/') { // Single line comment
+						lineInfo.EndsWithXmlDocComment = peek(2) == '/' && peek(3) != '/';
+						i += lineInfo.EndsWithXmlDocComment ? 3 : 2;
 						while (code[i] != '\n') i++;
 						lineInfo.EndsWithComment = true;
 					}
-					else if (i > 0 && code[i - 1] == '/' && code[i] == '*') { // Multi line comment
+					else if (code[i] == '/' && peek(1) == '*') { // Multi line comment
 						i += 2;
-						while (!(code[i - 1] == '*' && code[i] == '/')) i++;
-						i++;
+						while (!(code[i] == '*' && peek(1) == '/')) i++;
+						i += 2;
 						lineInfo.EndsWithComment = true;
 					}
-					else if (i > 0 && code[i - 1] == '@' && code[i] == '"') { // Verbatim string literal
-						i++;
-						while (!(code[i] == '"' && code[i + 1] != '"')) i += code[i] == '"' ? 2 : 1;
+					else if (code[i] == '@' && peek(1) == '"') { // Verbatim string literal
+						i += 2;
+						while (!(code[i] == '"' && peek(1) != '"')) i += code[i] == '"' ? 2 : 1;
 						i++;
 					}
 					else if (code[i] == '"') { // String literal
