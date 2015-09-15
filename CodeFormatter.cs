@@ -20,10 +20,19 @@ using System.Text;
 
 namespace FormatCode {
 	public class CodeFormatter {
-		public static void Format(string path) {
-			const int tabSize = 4;
-			const bool moveOpenBraces = false;
-			const bool requireLineEndAtEnd = false;
+		public CodeFormatter() {
+			TabSize = 4;
+			MoveOpenBracesUp = false;
+			RequireNewLineAtEnd = false;
+		}
+
+		public int TabSize { get; set; }
+
+		public bool MoveOpenBracesUp { get; set; }
+
+		public bool RequireNewLineAtEnd { get; set; }
+
+		public void Format(string path) {
 			byte[] codeBytes = File.ReadAllBytes(path);
 			Encoding encoding = DetectEncoding(codeBytes) ?? Encoding.Default;
 			string codeStrRaw = encoding.GetString(codeBytes);
@@ -56,7 +65,7 @@ namespace FormatCode {
 				LineInfo lineInfo = new LineInfo();
 
 				while (code[i] == ' ' || code[i] == '\t') {
-					lineInfo.LeadingWhitespaceCount += code[i] == '\t' ? (tabSize - (lineInfo.LeadingWhitespaceCount % 4)) : 1;
+					lineInfo.LeadingWhitespaceCount += code[i] == '\t' ? (TabSize - (lineInfo.LeadingWhitespaceCount % 4)) : 1;
 					i++;
 				}
 
@@ -117,7 +126,7 @@ namespace FormatCode {
 					new string(' ', lineInfo.LeadingWhitespaceCount % 4) +
 					lineBeef;
 
-				if (moveOpenBraces && prevLineInfo != null && lineBeef == "{" && lineInfo.LeadingWhitespaceCount == prevLineInfo.LeadingWhitespaceCount &&
+				if (MoveOpenBracesUp && prevLineInfo != null && lineBeef == "{" && lineInfo.LeadingWhitespaceCount == prevLineInfo.LeadingWhitespaceCount &&
 					!prevLineInfo.IsEmpty && !prevLineInfo.EndsWithComment && !prevLineInfo.IsPreprocessorDirective && !prevLineInfo.EndsWithCloseBrace &&
 					!prevLineInfo.EndsWithSemicolon && !prevLineInfo.EndsWithComma)
 				{
@@ -150,7 +159,7 @@ namespace FormatCode {
 			}
 
 			StringBuilder newCodeSB = new StringBuilder(String.Join("\n", lines));
-			if (requireLineEndAtEnd || fileEndsWithLineEnd) {
+			if (RequireNewLineAtEnd || fileEndsWithLineEnd) {
 				newCodeSB.Append("\n");
 			}
 			newCodeSB = newCodeSB.Replace("\n", Environment.NewLine);

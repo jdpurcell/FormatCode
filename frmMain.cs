@@ -33,6 +33,10 @@ namespace FormatCode {
 
 		private void frmMain_DragDrop(object sender, DragEventArgs e) {
 			if (e.Data.GetDataPresent(DataFormats.FileDrop)) {
+				CodeFormatter formatter = new CodeFormatter();
+				formatter.TabSize = Int32.Parse(txtTabSize.Text);
+				formatter.MoveOpenBracesUp = chkMoveOpenBracesUp.Checked;
+				formatter.RequireNewLineAtEnd = chkRequireNewLineAtEnd.Checked;
 				string[] ignoreNames = new string[] {  };
 				string[] ignoreSuffixes = new string[] {  };
 				string[] ignoreDirectories = new string[] {  };
@@ -51,7 +55,7 @@ namespace FormatCode {
 					if (ignoreNames.Any(n => Path.GetFileName(path).Equals(n, StringComparison.OrdinalIgnoreCase))) continue;
 					if (ignoreSuffixes.Any(s => path.EndsWith(s, StringComparison.OrdinalIgnoreCase))) continue;
 					if (ignoreDirectories.Any(d => path.IndexOf(@"\" + d + @"\", StringComparison.OrdinalIgnoreCase) != -1)) continue;
-					CodeFormatter.Format(path);
+					formatter.Format(path);
 				}
 				Activate();
 				MessageBox.Show(this, "Done!", "Done", MessageBoxButtons.OK, MessageBoxIcon.Information);
