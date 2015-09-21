@@ -109,20 +109,20 @@ namespace FormatCode {
 					}
 				}
 
-				string lineBeef = code.Substring(lineBeefStart, i - lineBeefStart).TrimEnd(' ', '\t');
-				lineInfo.EndsWithOpenBrace = !lineInfo.EndsWithComment && !lineInfo.IsPreprocessorDirective && lineBeef.EndsWith("{");
-				lineInfo.EndsWithCloseBrace = !lineInfo.EndsWithComment && !lineInfo.IsPreprocessorDirective && lineBeef.EndsWith("}");
-				lineInfo.EndsWithSemicolon = !lineInfo.EndsWithComment && !lineInfo.IsPreprocessorDirective && lineBeef.EndsWith(";");
-				lineInfo.EndsWithComma = !lineInfo.EndsWithComment && !lineInfo.IsPreprocessorDirective && lineBeef.EndsWith(",");
-				lineInfo.IsEmpty = lineBeef.Length == 0;
+				string lineSubstance = code.Substring(lineBeefStart, i - lineBeefStart).TrimEnd(' ', '\t');
+				lineInfo.EndsWithOpenBrace = !lineInfo.EndsWithComment && !lineInfo.IsPreprocessorDirective && lineSubstance.EndsWith("{");
+				lineInfo.EndsWithCloseBrace = !lineInfo.EndsWithComment && !lineInfo.IsPreprocessorDirective && lineSubstance.EndsWith("}");
+				lineInfo.EndsWithSemicolon = !lineInfo.EndsWithComment && !lineInfo.IsPreprocessorDirective && lineSubstance.EndsWith(";");
+				lineInfo.EndsWithComma = !lineInfo.EndsWithComment && !lineInfo.IsPreprocessorDirective && lineSubstance.EndsWith(",");
+				lineInfo.IsEmpty = lineSubstance.Length == 0;
 				lineInfo.IsEmptyAfterEndingWithOpenBrace = prevLineInfo != null && lineInfo.IsEmpty && prevLineInfo.EndsWithOpenBrace;
 				bool skippedLine = false;
 				string line = lineInfo.IsEmpty ? "" :
 					new string('\t', lineInfo.LeadingWhitespaceCount / 4) +
 					new string(' ', lineInfo.LeadingWhitespaceCount % 4) +
-					lineBeef;
+					lineSubstance;
 
-				if (MoveOpenBracesUp && prevLineInfo != null && lineBeef == "{" && lineInfo.LeadingWhitespaceCount == prevLineInfo.LeadingWhitespaceCount &&
+				if (MoveOpenBracesUp && prevLineInfo != null && lineSubstance == "{" && lineInfo.LeadingWhitespaceCount == prevLineInfo.LeadingWhitespaceCount &&
 					!prevLineInfo.IsEmpty && !prevLineInfo.EndsWithComment && !prevLineInfo.IsPreprocessorDirective && !prevLineInfo.EndsWithCloseBrace &&
 					!prevLineInfo.EndsWithSemicolon && !prevLineInfo.EndsWithComma)
 				{
@@ -134,10 +134,10 @@ namespace FormatCode {
 				else if (prevLineInfo != null && lineInfo.IsEmpty && prevLineInfo.EndsWithXmlDocComment) {
 					skippedLine = true;
 				}
-				else if (prevLineInfo != null && !lineBeef.StartsWith("}") && prevLineInfo.IsEmptyAfterEndingWithOpenBrace) {
+				else if (prevLineInfo != null && !lineSubstance.StartsWith("}") && prevLineInfo.IsEmptyAfterEndingWithOpenBrace) {
 					lines[lines.Count - 1] = line;
 				}
-				else if (prevLineInfo != null && lineBeef.StartsWith("}") && prevLineInfo.IsEmpty && !prevLineInfo.IsEmptyAfterEndingWithOpenBrace) {
+				else if (prevLineInfo != null && lineSubstance.StartsWith("}") && prevLineInfo.IsEmpty && !prevLineInfo.IsEmptyAfterEndingWithOpenBrace) {
 					lines[lines.Count - 1] = line;
 				}
 				else {
