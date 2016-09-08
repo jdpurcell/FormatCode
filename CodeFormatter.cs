@@ -70,10 +70,10 @@ namespace FormatCode {
 					i++;
 				}
 
-				int lineBeefStart = i;
+				int lineSubstanceStart = i;
 
 				while (peek(0) != '\n') {
-					if (i == lineBeefStart && peek(0) == '#') { // Preprocessor directive
+					if (i == lineSubstanceStart && peek(0) == '#') { // Preprocessor directive
 						i++;
 						while (peek(0) != '\n') i++;
 						lineInfo.IsPreprocessorDirective = true;
@@ -114,7 +114,7 @@ namespace FormatCode {
 					}
 				}
 
-				string lineSubstance = code.Substring(lineBeefStart, i - lineBeefStart).TrimEnd(' ', '\t');
+				string lineSubstance = code.Substring(lineSubstanceStart, i - lineSubstanceStart).TrimEnd(' ', '\t');
 				lineInfo.EndsWithOpenBrace = !lineInfo.EndsWithComment && !lineInfo.IsPreprocessorDirective && lineSubstance.EndsWith("{");
 				lineInfo.EndsWithCloseBrace = !lineInfo.EndsWithComment && !lineInfo.IsPreprocessorDirective && lineSubstance.EndsWith("}");
 				lineInfo.EndsWithSemicolon = !lineInfo.EndsWithComment && !lineInfo.IsPreprocessorDirective && lineSubstance.EndsWith(";");
