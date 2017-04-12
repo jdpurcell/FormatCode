@@ -1,5 +1,5 @@
 ﻿// --------------------------------------------------------------------------------
-// Copyright (c) 2011 J.D. Purcell
+// Copyright (c) 2011-2017 J.D. Purcell
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (the "Software"), to deal in
@@ -21,6 +21,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace FormatCode {
@@ -49,6 +50,7 @@ namespace FormatCode {
 			int i = 0;
 			List<string> lines = new List<string>();
 			LineInfo prevLineInfo = null;
+			Stack<Context> contexts = new Stack<Context>(new[] { new NormalContext() });
 
 			if (code.IndexOf("#region Component Designer generated code", StringComparison.OrdinalIgnoreCase) != -1 ||
 				code.IndexOf("#region Windows Form Designer generated code", StringComparison.OrdinalIgnoreCase) != -1 ||
@@ -57,10 +59,17 @@ namespace FormatCode {
 				return;
 			}
 
-			Func<int, char> peek = (offset) => {
+			char peek(int offset) {
+				const int maxSpill = 1024;
 				int index = i + offset;
-				return index >= 0 && index < code.Length ? code[index] : '\n';
-			};
+				if (index >= 0 && index < code.Length) {
+					return code[index];
+				}
+				if (index >= -maxSpill && index < code.Length + maxSpill) {
+					return '\n';
+				}
+				throw new Exception("Detected unterminated sequence.");
+			}
 
 			while (i < code.Length) {
 				LineInfo lineInfo = new LineInfo();
@@ -72,8 +81,40 @@ namespace FormatCode {
 
 				int lineSubstanceStart = i;
 
-				while (peek(0) != '\n') {
-					if (i == lineSubstanceStart && peek(0) == '#') { // Preprocessor directive
+				while (peek(0) != '\n' || !(contexts.Peek() is NormalContext)) {
+					if (contexts.Peek() is VerbatimInterpolatedStringContext || (peek(0) == '$' && peek(1) == '@' && peek(2) == '"')) { // Verbatim interpolated string
+						if (contexts.Peek() is NormalContext) {
+							contexts.Push(new VerbatimInterpolatedStringContext());
+							i += 3;
+						}
+						bool isEndQuote() => peek(0) == '"' && peek(1) != '"';
+						bool isCodeSection() => peek(0) == '{' && peek(1) != '{';
+						while (!isEndQuote() && !isCodeSection()) i += peek(0) == '"' || peek(0) == '{' ? 2 : 1;
+						if (isCodeSection()) {
+							contexts.Push(new NormalContext());
+						}
+						else if (isEndQuote()) {
+							contexts.Pop();
+						}
+						i++;
+					}
+					else if (contexts.Peek() is InterpolatedStringContext || (peek(0) == '$' && peek(1) == '"')) { // Interpolated string
+						if (contexts.Peek() is NormalContext) {
+							contexts.Push(new InterpolatedStringContext());
+							i += 2;
+						}
+						bool isEndQuote() => peek(0) == '"';
+						bool isCodeSection() => peek(0) == '{' && peek(1) != '{';
+						while (!isEndQuote() && !isCodeSection()) i += peek(0) == '\\' || peek(0) == '{' ? 2 : 1;
+						if (isCodeSection()) {
+							contexts.Push(new NormalContext());
+						}
+						else if (isEndQuote()) {
+							contexts.Pop();
+						}
+						i++;
+					}
+					else if (i == lineSubstanceStart && peek(0) == '#') { // Preprocessor directive
 						i++;
 						while (peek(0) != '\n') i++;
 						lineInfo.IsPreprocessorDirective = true;
@@ -105,6 +146,19 @@ namespace FormatCode {
 						while (peek(0) != '\'') i += peek(0) == '\\' ? 2 : 1;
 						i++;
 					}
+					else if (peek(0) == '{') {
+						i++;
+						contexts.Peek().BlockDepth++;
+					}
+					else if (peek(0) == '}') {
+						i++;
+						if (--contexts.Peek().BlockDepth == -1) {
+							if (contexts.Count < 1) {
+								throw new Exception("Detected curly brace mismatch.");
+							}
+							contexts.Pop();
+						}
+					}
 					else if (peek(0) == '\t' || peek(0) == ' ') {
 						i++;
 					}
@@ -112,6 +166,10 @@ namespace FormatCode {
 						i++;
 						lineInfo.EndsWithComment = false;
 					}
+				}
+
+				if (contexts.Count > 1 && contexts.OfType<InterpolatedStringContext>().Any()) {
+					throw new Exception("Detected incomplete interpolated string.");
 				}
 
 				string lineSubstance = code.Substring(lineSubstanceStart, i - lineSubstanceStart).TrimEnd(' ', '\t');
@@ -153,6 +211,10 @@ namespace FormatCode {
 				if (!skippedLine) {
 					prevLineInfo = lineInfo;
 				}
+			}
+
+			if (contexts.Count != 1) {
+				throw new Exception("Detected incomplete verbatim interpolated string.");
 			}
 
 			if (lines.Count != 0 && lines[lines.Count - 1].Length == 0) {
@@ -253,6 +315,16 @@ namespace FormatCode {
 			public bool IsEmpty;
 			public bool IsEmptyAfterEndingWithOpenBrace;
 		}
+
+		private abstract class Context {
+			public int BlockDepth { get; set; }
+		}
+
+		private class NormalContext : Context { }
+
+		private class InterpolatedStringContext : Context { }
+
+		private class VerbatimInterpolatedStringContext : Context { }
 
 		private enum BOMType {
 			None = 0,

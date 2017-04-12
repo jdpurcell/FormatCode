@@ -1,5 +1,5 @@
 ﻿// --------------------------------------------------------------------------------
-// Copyright (c) 2011 J.D. Purcell
+// Copyright (c) 2011-2017 J.D. Purcell
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (the "Software"), to deal in
@@ -46,7 +46,7 @@ namespace FormatCode {
 				string[] ignoreSuffixes = new string[] {  };
 				string[] ignoreDirectories = new string[] {  };
 				string[] paths = (string[])e.Data.GetData(DataFormats.FileDrop);
-				List<IEnumerable<string>> pathEnumList = new List<IEnumerable<string>>();
+				var pathEnumList = new List<IEnumerable<string>>();
 				foreach (string path in paths) {
 					if (File.Exists(path)) {
 						pathEnumList.Add(new[] { path });
@@ -60,7 +60,13 @@ namespace FormatCode {
 					if (ignoreNames.Any(n => Path.GetFileName(path).Equals(n, StringComparison.OrdinalIgnoreCase))) continue;
 					if (ignoreSuffixes.Any(s => path.EndsWith(s, StringComparison.OrdinalIgnoreCase))) continue;
 					if (ignoreDirectories.Any(d => path.IndexOf(@"\" + d + @"\", StringComparison.OrdinalIgnoreCase) != -1)) continue;
-					formatter.Format(path);
+					try {
+						formatter.Format(path);
+					}
+					catch (Exception ex) {
+						MessageBox.Show(this, $"{path}\r\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+						return;
+					}
 				}
 				Activate();
 				MessageBox.Show(this, "Done!", "Done", MessageBoxButtons.OK, MessageBoxIcon.Information);
