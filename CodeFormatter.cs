@@ -153,7 +153,7 @@ namespace FormatCode {
 					else if (peek(0) == '}') {
 						i++;
 						if (--contexts.Peek().BlockDepth == -1) {
-							if (contexts.Count < 1) {
+							if (contexts.Count < 2) {
 								throw new Exception("Detected curly brace mismatch.");
 							}
 							contexts.Pop();
@@ -215,6 +215,9 @@ namespace FormatCode {
 
 			if (contexts.Count != 1) {
 				throw new Exception("Detected incomplete verbatim interpolated string.");
+			}
+			if (contexts.Peek().BlockDepth != 0) {
+				throw new Exception("Detected curly brace mismatch.");
 			}
 
 			if (lines.Count != 0 && lines[lines.Count - 1].Length == 0) {
