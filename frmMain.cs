@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace FormatCode {
@@ -31,21 +32,24 @@ namespace FormatCode {
 		}
 
 		private void frmMain_DragEnter(object sender, DragEventArgs e) {
-			if (e.Data.GetDataPresent(DataFormats.FileDrop)) {
-				e.Effect = DragDropEffects.Copy;
-			}
+			if (!panMain.Enabled) return;
+			if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
+			e.Effect = DragDropEffects.Copy;
 		}
 
 		private void frmMain_DragDrop(object sender, DragEventArgs e) {
-			if (e.Data.GetDataPresent(DataFormats.FileDrop)) {
-				CodeFormatter formatter = new CodeFormatter();
-				formatter.TabSize = Int32.Parse(txtTabSize.Text);
-				formatter.MoveOpenBracesUp = chkMoveOpenBracesUp.Checked;
-				formatter.RequireNewLineAtEnd = chkRequireNewLineAtEnd.Checked;
-				string[] ignoreNames = new string[] {  };
-				string[] ignoreSuffixes = new string[] {  };
-				string[] ignoreDirectories = new string[] {  };
-				string[] paths = (string[])e.Data.GetData(DataFormats.FileDrop);
+			if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
+			var formatter = new CodeFormatter {
+				TabSize = Int32.Parse(txtTabSize.Text),
+				MoveOpenBracesUp = chkMoveOpenBracesUp.Checked,
+				RequireNewLineAtEnd = chkRequireNewLineAtEnd.Checked
+			};
+			string[] paths = (string[])e.Data.GetData(DataFormats.FileDrop);
+			FormatCode(formatter, paths);
+		}
+
+		private void FormatCode(CodeFormatter formatter, string[] paths) {
+			void Run() {
 				var pathEnumList = new List<IEnumerable<string>>();
 				foreach (string path in paths) {
 					if (File.Exists(path)) {
@@ -55,6 +59,12 @@ namespace FormatCode {
 						pathEnumList.Add(Directory.EnumerateFiles(path, "*.cs", SearchOption.AllDirectories));
 					}
 				}
+
+				string[] ignoreNames = new string[] {  };
+				string[] ignoreSuffixes = new string[] {  };
+				string[] ignoreDirectories = new string[] {  };
+
+				string errorMessage = null;
 				foreach (string path in pathEnumList.SelectMany(pe => pe)) {
 					if (!Path.GetExtension(path).Equals(".cs", StringComparison.OrdinalIgnoreCase)) continue;
 					if (ignoreNames.Any(n => Path.GetFileName(path).Equals(n, StringComparison.OrdinalIgnoreCase))) continue;
@@ -64,13 +74,25 @@ namespace FormatCode {
 						formatter.Format(path);
 					}
 					catch (Exception ex) {
-						MessageBox.Show(this, $"{path}\r\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-						return;
+						errorMessage = $"{path}\r\n{ex.Message}";
+						break;
 					}
 				}
-				Activate();
-				MessageBox.Show(this, "Done!", "Done", MessageBoxButtons.OK, MessageBoxIcon.Information);
+				this.BeginInvoke(() => {
+					Application.UseWaitCursor = false;
+					panMain.Enabled = true;
+					Activate();
+					if (errorMessage != null) {
+						MessageBox.Show(this, errorMessage, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+					}
+					else {
+						MessageBox.Show(this, "Done!", "Done", MessageBoxButtons.OK, MessageBoxIcon.Information);
+					}
+				});
 			}
+			Application.UseWaitCursor = true;
+			panMain.Enabled = false;
+			new Thread(Run).Start();
 		}
 	}
 }

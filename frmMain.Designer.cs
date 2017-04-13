@@ -27,6 +27,8 @@
 			this.chkRequireNewLineAtEnd = new System.Windows.Forms.CheckBox();
 			this.txtTabSize = new System.Windows.Forms.TextBox();
 			this.lblTabSize = new System.Windows.Forms.Label();
+			this.panMain = new System.Windows.Forms.Panel();
+			this.panMain.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// chkMoveOpenBracesUp
@@ -66,16 +68,24 @@
 			this.lblTabSize.TabIndex = 0;
 			this.lblTabSize.Text = "Tab Size:";
 			// 
+			// panMain
+			// 
+			this.panMain.Controls.Add(this.lblTabSize);
+			this.panMain.Controls.Add(this.txtTabSize);
+			this.panMain.Controls.Add(this.chkMoveOpenBracesUp);
+			this.panMain.Controls.Add(this.chkRequireNewLineAtEnd);
+			this.panMain.Location = new System.Drawing.Point(0, 0);
+			this.panMain.Name = "panMain";
+			this.panMain.Size = new System.Drawing.Size(248, 180);
+			this.panMain.TabIndex = 4;
+			// 
 			// frmMain
 			// 
 			this.AllowDrop = true;
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(248, 180);
-			this.Controls.Add(this.lblTabSize);
-			this.Controls.Add(this.txtTabSize);
-			this.Controls.Add(this.chkRequireNewLineAtEnd);
-			this.Controls.Add(this.chkMoveOpenBracesUp);
+			this.Controls.Add(this.panMain);
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
 			this.MaximizeBox = false;
 			this.Name = "frmMain";
@@ -84,8 +94,9 @@
 			this.TopMost = true;
 			this.DragDrop += new System.Windows.Forms.DragEventHandler(this.frmMain_DragDrop);
 			this.DragEnter += new System.Windows.Forms.DragEventHandler(this.frmMain_DragEnter);
+			this.panMain.ResumeLayout(false);
+			this.panMain.PerformLayout();
 			this.ResumeLayout(false);
-			this.PerformLayout();
 
 		}
 
@@ -95,7 +106,7 @@
 		private System.Windows.Forms.CheckBox chkRequireNewLineAtEnd;
 		private System.Windows.Forms.TextBox txtTabSize;
 		private System.Windows.Forms.Label lblTabSize;
-
+		private System.Windows.Forms.Panel panMain;
 	}
 }
 

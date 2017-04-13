@@ -39,6 +39,7 @@ namespace FormatCode {
 		public bool RequireNewLineAtEnd { get; set; }
 
 		public void Format(string path) {
+			const char bomChar = '\uFEFF';
 			byte[] codeBytes = File.ReadAllBytes(path);
 			Encoding encoding = DetectEncoding(codeBytes) ?? Encoding.Default;
 			string codeStrRaw = encoding.GetString(codeBytes);
@@ -72,6 +73,11 @@ namespace FormatCode {
 				throw new Exception("Detected unterminated sequence.");
 			}
 			Context context(int depth = 0) => depth < contexts.Count ? contexts.ElementAt(depth) : null;
+
+			bool hasBOM = peek(0) == bomChar;
+			if (hasBOM) {
+				i++;
+			}
 
 			while (i < code.Length) {
 				LineInfo lineInfo = new LineInfo();
@@ -130,7 +136,7 @@ namespace FormatCode {
 							i++;
 						}
 					}
-					else if (i == lineSubstanceStart && peek(0) == '#') { // Preprocessor directive
+					else if (i == lineSubstanceStart && peek(0) == '#' && contexts.Count == 1) { // Preprocessor directive
 						i++;
 						while (peek(0) != '\n') i++;
 						lineInfo.IsPreprocessorDirective = true;
@@ -145,7 +151,7 @@ namespace FormatCode {
 						i += 2;
 						while (!(peek(0) == '*' && peek(1) == '/')) i++;
 						i += 2;
-						lineInfo.EndsWithComment = true;
+						lineInfo.EndsWithComment = Enumerable.Range(0, Int32.MaxValue).Select(n => peek(n)).TakeWhile(c => c != '\n').Any(c => c != '\t' && c != ' ');
 					}
 					else if (peek(0) == '@' && peek(1) == '"') { // Verbatim string literal
 						i += 2;
@@ -162,24 +168,24 @@ namespace FormatCode {
 						while (peek(0) != '\'') i += peek(0) == '\\' ? 2 : 1;
 						i++;
 					}
-					else if (peek(0) == '{') {
+					else if (peek(0) == '{' && contexts.Count > 1) {
 						i++;
 						context().BlockDepth++;
 					}
-					else if (peek(0) == '}') {
+					else if (peek(0) == '}' && contexts.Count > 1) {
 						i++;
 						if (--context().BlockDepth == -1) {
-							if (contexts.Count < 2) {
-								throw new Exception("Detected curly brace mismatch.");
+							if (context().ParenDepth != 0) {
+								throw new Exception("Detected parentheses mismatch.");
 							}
 							contexts.Pop();
 						}
 					}
-					else if (peek(0) == '(') {
+					else if (peek(0) == '(' && contexts.Count > 1) {
 						i++;
 						context().ParenDepth++;
 					}
-					else if (peek(0) == ')') {
+					else if (peek(0) == ')' && contexts.Count > 1) {
 						i++;
 						if (--context().ParenDepth == -1) {
 							throw new Exception("Detected parentheses mismatch.");
@@ -190,12 +196,8 @@ namespace FormatCode {
 						contexts.Pop();
 						isInInterpolatedStringFormatSection = true;
 					}
-					else if (peek(0) == '\t' || peek(0) == ' ') {
-						i++;
-					}
 					else {
 						i++;
-						lineInfo.EndsWithComment = false;
 					}
 				}
 
@@ -247,15 +249,16 @@ namespace FormatCode {
 			if (contexts.Count != 1) {
 				throw new Exception("Detected incomplete verbatim interpolated string.");
 			}
-			if (context().BlockDepth != 0) {
-				throw new Exception("Detected curly brace mismatch.");
-			}
 
 			if (lines.Count != 0 && lines[lines.Count - 1].Length == 0) {
 				lines.RemoveAt(lines.Count - 1);
 			}
 
-			StringBuilder newCodeSB = new StringBuilder(String.Join("\n", lines));
+			StringBuilder newCodeSB = new StringBuilder();
+			if (hasBOM) {
+				newCodeSB.Append(bomChar);
+			}
+			newCodeSB.Append(String.Join("\n", lines));
 			if (RequireNewLineAtEnd || fileEndsWithLineEnd) {
 				newCodeSB.Append("\n");
 			}
