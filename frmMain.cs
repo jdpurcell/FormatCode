@@ -44,7 +44,7 @@ namespace FormatCode {
 				MoveOpenBracesUp = chkMoveOpenBracesUp.Checked,
 				RequireNewLineAtEnd = chkRequireNewLineAtEnd.Checked
 			};
-			string[] paths = (string[])e.Data.GetData(DataFormats.FileDrop);
+			var paths = (string[])e.Data.GetData(DataFormats.FileDrop);
 			FormatCode(formatter, paths);
 		}
 
@@ -69,7 +69,7 @@ namespace FormatCode {
 					if (!Path.GetExtension(path).Equals(".cs", StringComparison.OrdinalIgnoreCase)) continue;
 					if (ignoreNames.Any(n => Path.GetFileName(path).Equals(n, StringComparison.OrdinalIgnoreCase))) continue;
 					if (ignoreSuffixes.Any(s => path.EndsWith(s, StringComparison.OrdinalIgnoreCase))) continue;
-					if (ignoreDirectories.Any(d => path.IndexOf(@"\" + d + @"\", StringComparison.OrdinalIgnoreCase) != -1)) continue;
+					if (ignoreDirectories.Any(d => path.IndexOf($@"\{d}\", StringComparison.OrdinalIgnoreCase) != -1)) continue;
 					try {
 						formatter.Format(path);
 					}

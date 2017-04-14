@@ -26,13 +26,7 @@ using System.Text;
 
 namespace FormatCode {
 	public class CodeFormatter {
-		public CodeFormatter() {
-			TabSize = 4;
-			MoveOpenBracesUp = false;
-			RequireNewLineAtEnd = false;
-		}
-
-		public int TabSize { get; set; }
+		public int TabSize { get; set; } = 4;
 
 		public bool MoveOpenBracesUp { get; set; }
 
@@ -101,13 +95,13 @@ namespace FormatCode {
 								contexts.Push(new VerbatimInterpolatedStringContext());
 								i += 3;
 							}
-							bool isEndQuote() => peek(0) == '"' && peek(1) != '"';
-							bool isCodeSection() => peek(0) == '{' && peek(1) != '{';
-							while (!isEndQuote() && !isCodeSection()) i += peek(0) == '"' || peek(0) == '{' ? 2 : 1;
-							if (isCodeSection()) {
+							bool IsEndQuote() => peek(0) == '"' && peek(1) != '"';
+							bool IsCodeSection() => peek(0) == '{' && peek(1) != '{';
+							while (!IsEndQuote() && !IsCodeSection()) i += peek(0) == '"' || peek(0) == '{' ? 2 : 1;
+							if (IsCodeSection()) {
 								contexts.Push(new NormalContext());
 							}
-							else if (isEndQuote()) {
+							else if (IsEndQuote()) {
 								contexts.Pop();
 							}
 							i++;
@@ -124,13 +118,13 @@ namespace FormatCode {
 								contexts.Push(new InterpolatedStringContext());
 								i += 2;
 							}
-							bool isEndQuote() => peek(0) == '"';
-							bool isCodeSection() => peek(0) == '{' && peek(1) != '{';
-							while (!isEndQuote() && !isCodeSection()) i += peek(0) == '\\' || peek(0) == '{' ? 2 : 1;
-							if (isCodeSection()) {
+							bool IsEndQuote() => peek(0) == '"';
+							bool IsCodeSection() => peek(0) == '{' && peek(1) != '{';
+							while (!IsEndQuote() && !IsCodeSection()) i += peek(0) == '\\' || peek(0) == '{' ? 2 : 1;
+							if (IsCodeSection()) {
 								contexts.Push(new NormalContext());
 							}
-							else if (isEndQuote()) {
+							else if (IsEndQuote()) {
 								contexts.Pop();
 							}
 							i++;
