@@ -41,6 +41,7 @@ namespace FormatCode {
 			if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
 			var formatter = new CodeFormatter {
 				TabSize = Int32.Parse(txtTabSize.Text),
+				TabsAsSpaces = rbTabsAsSpaces.Checked,
 				MoveOpenBracesUp = chkMoveOpenBracesUp.Checked,
 				RequireNewLineAtEnd = chkRequireNewLineAtEnd.Checked
 			};

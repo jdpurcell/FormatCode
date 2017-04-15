@@ -28,6 +28,8 @@ namespace FormatCode {
 	public class CodeFormatter {
 		public int TabSize { get; set; } = 4;
 
+		public bool TabsAsSpaces { get; set; }
+
 		public bool MoveOpenBracesUp { get; set; }
 
 		public bool RequireNewLineAtEnd { get; set; }
@@ -207,10 +209,8 @@ namespace FormatCode {
 				lineInfo.IsEmpty = lineSubstance.Length == 0;
 				lineInfo.IsEmptyAfterEndingWithOpenBrace = prevLineInfo != null && lineInfo.IsEmpty && prevLineInfo.EndsWithOpenBrace;
 				bool skippedLine = false;
-				string line = lineInfo.IsEmpty ? "" :
-					new string('\t', lineInfo.LeadingWhitespaceCount / 4) +
-					new string(' ', lineInfo.LeadingWhitespaceCount % 4) +
-					lineSubstance;
+				string MakeIndentation(int count) => TabsAsSpaces ? new string(' ', count) : new string('\t', count / 4) + new string(' ', count % 4);
+				string line = lineInfo.IsEmpty ? "" : MakeIndentation(lineInfo.LeadingWhitespaceCount) + lineSubstance;
 
 				if (MoveOpenBracesUp && prevLineInfo != null && lineSubstance == "{" && lineInfo.LeadingWhitespaceCount == prevLineInfo.LeadingWhitespaceCount &&
 					!prevLineInfo.IsEmpty && !prevLineInfo.EndsWithComment && !prevLineInfo.IsPreprocessorDirective && !prevLineInfo.EndsWithCloseBrace &&
