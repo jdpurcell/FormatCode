@@ -30,8 +30,10 @@
 			this.panMain = new System.Windows.Forms.Panel();
 			this.grpTabs = new System.Windows.Forms.GroupBox();
 			this.panTabsSpaces = new System.Windows.Forms.Panel();
-			this.rbTabsAsTabs = new System.Windows.Forms.RadioButton();
 			this.rbTabsAsSpaces = new System.Windows.Forms.RadioButton();
+			this.rbTabsAsTabs = new System.Windows.Forms.RadioButton();
+			this.lblInstructions = new System.Windows.Forms.Label();
+			this.lblStatus = new System.Windows.Forms.Label();
 			this.panMain.SuspendLayout();
 			this.grpTabs.SuspendLayout();
 			this.panTabsSpaces.SuspendLayout();
@@ -76,9 +78,11 @@
 			// 
 			// panMain
 			// 
+			this.panMain.Controls.Add(this.lblInstructions);
 			this.panMain.Controls.Add(this.grpTabs);
 			this.panMain.Controls.Add(this.chkMoveOpenBracesUp);
 			this.panMain.Controls.Add(this.chkRequireNewLineAtEnd);
+			this.panMain.Controls.Add(this.lblStatus);
 			this.panMain.Location = new System.Drawing.Point(0, 0);
 			this.panMain.Name = "panMain";
 			this.panMain.Size = new System.Drawing.Size(248, 180);
@@ -105,6 +109,16 @@
 			this.panTabsSpaces.Size = new System.Drawing.Size(120, 20);
 			this.panTabsSpaces.TabIndex = 2;
 			// 
+			// rbTabsAsSpaces
+			// 
+			this.rbTabsAsSpaces.AutoSize = true;
+			this.rbTabsAsSpaces.Location = new System.Drawing.Point(56, 0);
+			this.rbTabsAsSpaces.Name = "rbTabsAsSpaces";
+			this.rbTabsAsSpaces.Size = new System.Drawing.Size(61, 17);
+			this.rbTabsAsSpaces.TabIndex = 1;
+			this.rbTabsAsSpaces.Text = "Spaces";
+			this.rbTabsAsSpaces.UseVisualStyleBackColor = true;
+			// 
 			// rbTabsAsTabs
 			// 
 			this.rbTabsAsTabs.AutoSize = true;
@@ -117,15 +131,22 @@
 			this.rbTabsAsTabs.Text = "Tabs";
 			this.rbTabsAsTabs.UseVisualStyleBackColor = true;
 			// 
-			// rbTabsAsSpaces
+			// lblInstructions
 			// 
-			this.rbTabsAsSpaces.AutoSize = true;
-			this.rbTabsAsSpaces.Location = new System.Drawing.Point(56, 0);
-			this.rbTabsAsSpaces.Name = "rbTabsAsSpaces";
-			this.rbTabsAsSpaces.Size = new System.Drawing.Size(61, 17);
-			this.rbTabsAsSpaces.TabIndex = 1;
-			this.rbTabsAsSpaces.Text = "Spaces";
-			this.rbTabsAsSpaces.UseVisualStyleBackColor = true;
+			this.lblInstructions.Location = new System.Drawing.Point(8, 156);
+			this.lblInstructions.Name = "lblInstructions";
+			this.lblInstructions.Size = new System.Drawing.Size(232, 16);
+			this.lblInstructions.TabIndex = 3;
+			this.lblInstructions.Text = "Drop files/folders here.";
+			this.lblInstructions.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+			// 
+			// lblStatus
+			// 
+			this.lblStatus.Location = new System.Drawing.Point(8, 156);
+			this.lblStatus.Name = "lblStatus";
+			this.lblStatus.Size = new System.Drawing.Size(232, 16);
+			this.lblStatus.TabIndex = 4;
+			this.lblStatus.TextAlign = System.Drawing.ContentAlignment.TopCenter;
 			// 
 			// frmMain
 			// 
@@ -163,6 +184,8 @@
 		private System.Windows.Forms.Panel panTabsSpaces;
 		private System.Windows.Forms.RadioButton rbTabsAsSpaces;
 		private System.Windows.Forms.RadioButton rbTabsAsTabs;
+		private System.Windows.Forms.Label lblInstructions;
+		private System.Windows.Forms.Label lblStatus;
 	}
 }
 

@@ -30,19 +30,19 @@ namespace FormatCode {
 				MoveOpenBracesUp = chkMoveOpenBracesUp.Checked,
 				RequireNewLineAtEnd = chkRequireNewLineAtEnd.Checked
 			};
-			var paths = (string[])e.Data.GetData(DataFormats.FileDrop);
-			FormatCode(formatter, paths);
+			var dirsAndFiles = (string[])e.Data.GetData(DataFormats.FileDrop);
+			FormatCode(formatter, dirsAndFiles);
 		}
 
-		private void FormatCode(CodeFormatter formatter, string[] paths) {
+		private void FormatCode(CodeFormatter formatter, string[] dirsAndFiles) {
 			void Run() {
-				var pathEnumList = new List<IEnumerable<string>>();
-				foreach (string path in paths) {
+				IEnumerable<string> paths = Enumerable.Empty<string>();
+				foreach (string path in dirsAndFiles) {
 					if (File.Exists(path)) {
-						pathEnumList.Add(new[] { path });
+						paths = paths.Concat(Enumerable.Repeat(path, 1));
 					}
 					else if (Directory.Exists(path)) {
-						pathEnumList.Add(Directory.EnumerateFiles(path, "*.cs", SearchOption.AllDirectories));
+						paths = paths.Concat(Directory.EnumerateFiles(path, "*.cs", SearchOption.AllDirectories));
 					}
 				}
 
@@ -50,8 +50,11 @@ namespace FormatCode {
 				string[] ignoreSuffixes = new string[] {  };
 				string[] ignoreDirectories = new string[] {  };
 
+				int processedCount = 0;
+				TimeSpan uiUpdateInterval = TimeSpan.FromMilliseconds(15);
+				DateTime nextUIUpdateTime = DateTime.UtcNow;
 				string errorMessage = null;
-				foreach (string path in pathEnumList.SelectMany(pe => pe)) {
+				foreach (string path in paths) {
 					if (!Path.GetExtension(path).Equals(".cs", StringComparison.OrdinalIgnoreCase)) continue;
 					if (ignoreNames.Any(n => Path.GetFileName(path).Equals(n, StringComparison.OrdinalIgnoreCase))) continue;
 					if (ignoreSuffixes.Any(s => path.EndsWith(s, StringComparison.OrdinalIgnoreCase))) continue;
@@ -62,6 +65,14 @@ namespace FormatCode {
 					catch (Exception ex) {
 						errorMessage = $"{path}\r\n{ex.Message}";
 						break;
+					}
+					processedCount++;
+					DateTime timeNow = DateTime.UtcNow;
+					if (timeNow >= nextUIUpdateTime) {
+						this.Invoke(() => {
+							lblStatus.Text = $"Processed {processedCount:#,##0} files.";
+						});
+						nextUIUpdateTime = timeNow + uiUpdateInterval;
 					}
 				}
 				this.BeginInvoke(() => {
@@ -74,10 +85,15 @@ namespace FormatCode {
 					else {
 						MessageBox.Show(this, "Done!", "Done", MessageBoxButtons.OK, MessageBoxIcon.Information);
 					}
+					lblStatus.Visible = false;
+					lblInstructions.Visible = true;
 				});
 			}
 			Application.UseWaitCursor = true;
 			panMain.Enabled = false;
+			lblInstructions.Visible = false;
+			lblStatus.Visible = true;
+			lblStatus.Text = "";
 			new Thread(Run).Start();
 		}
 	}
