@@ -78,14 +78,12 @@
 			// 
 			// panMain
 			// 
-			this.panMain.Controls.Add(this.lblInstructions);
 			this.panMain.Controls.Add(this.grpTabs);
 			this.panMain.Controls.Add(this.chkMoveOpenBracesUp);
 			this.panMain.Controls.Add(this.chkRequireNewLineAtEnd);
-			this.panMain.Controls.Add(this.lblStatus);
 			this.panMain.Location = new System.Drawing.Point(0, 0);
 			this.panMain.Name = "panMain";
-			this.panMain.Size = new System.Drawing.Size(248, 180);
+			this.panMain.Size = new System.Drawing.Size(248, 116);
 			this.panMain.TabIndex = 0;
 			// 
 			// grpTabs
@@ -154,6 +152,8 @@
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(248, 180);
+			this.Controls.Add(this.lblInstructions);
+			this.Controls.Add(this.lblStatus);
 			this.Controls.Add(this.panMain);
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
 			this.MaximizeBox = false;

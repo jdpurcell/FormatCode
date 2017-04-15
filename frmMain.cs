@@ -77,7 +77,6 @@ namespace FormatCode {
 				}
 				this.BeginInvoke(() => {
 					Application.UseWaitCursor = false;
-					panMain.Enabled = true;
 					Activate();
 					if (errorMessage != null) {
 						MessageBox.Show(this, errorMessage, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -85,6 +84,7 @@ namespace FormatCode {
 					else {
 						MessageBox.Show(this, "Done!", "Done", MessageBoxButtons.OK, MessageBoxIcon.Information);
 					}
+					panMain.Enabled = true;
 					lblStatus.Visible = false;
 					lblInstructions.Visible = true;
 				});
