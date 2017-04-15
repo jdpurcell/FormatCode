@@ -314,21 +314,22 @@ namespace FormatCode {
 
 		private static bool HasUTF8Sequence(byte[] bytes) {
 			for (int i = 0; i < bytes.Length; i++) {
-				int rem = bytes.Length - i - 1;
-				if ((bytes[i] & 0xE0) == 0xC0 && rem >= 1 && (bytes[i + 1] & 0xC0) == 0x80 &&
-					(bytes[i] & 0x1E) != 0)
+				int extra = bytes.Length - i - 1;
+				bool IsContinuation(int offset) => (bytes[i + offset] & 0b11000000) == 0b10000000;
+				if ((bytes[i] & 0b11100000) == 0b11000000 && extra >= 1 && IsContinuation(1) &&
+					(bytes[i] & 0b00011110) != 0)
 					return true;
-				if ((bytes[i] & 0xF0) == 0xE0 && rem >= 2 && (bytes[i + 1] & 0xC0) == 0x80 && (bytes[i + 2] & 0xC0) == 0x80 &&
-					(bytes[i] & 0x0F | bytes[i + 1] & 0x20) != 0)
+				if ((bytes[i] & 0b11110000) == 0b11100000 && extra >= 2 && IsContinuation(1) && IsContinuation(2) &&
+					(bytes[i] & 0b00001111 | bytes[i + 1] & 0b00100000) != 0)
 					return true;
-				if ((bytes[i] & 0xF8) == 0xF0 && rem >= 3 && (bytes[i + 1] & 0xC0) == 0x80 && (bytes[i + 2] & 0xC0) == 0x80 && (bytes[i + 3] & 0xC0) == 0x80 &&
-					(bytes[i] & 0x07 | bytes[i + 1] & 0x30) != 0)
+				if ((bytes[i] & 0b11111000) == 0b11110000 && extra >= 3 && IsContinuation(1) && IsContinuation(2) && IsContinuation(3) &&
+					(bytes[i] & 0b00000111 | bytes[i + 1] & 0b00110000) != 0)
 					return true;
-				if ((bytes[i] & 0xFC) == 0xF8 && rem >= 4 && (bytes[i + 1] & 0xC0) == 0x80 && (bytes[i + 2] & 0xC0) == 0x80 && (bytes[i + 3] & 0xC0) == 0x80 && (bytes[i + 4] & 0xC0) == 0x80 &&
-					(bytes[i] & 0x03 | bytes[i + 1] & 0x38) != 0)
+				if ((bytes[i] & 0b11111100) == 0b11111000 && extra >= 4 && IsContinuation(1) && IsContinuation(2) && IsContinuation(3) && IsContinuation(4) &&
+					(bytes[i] & 0b00000011 | bytes[i + 1] & 0b00111000) != 0)
 					return true;
-				if ((bytes[i] & 0xFE) == 0xFC && rem >= 5 && (bytes[i + 1] & 0xC0) == 0x80 && (bytes[i + 2] & 0xC0) == 0x80 && (bytes[i + 3] & 0xC0) == 0x80 && (bytes[i + 4] & 0xC0) == 0x80 && (bytes[i + 5] & 0xC0) == 0x80 &&
-					(bytes[i] & 0x01 | bytes[i + 1] & 0x3C) != 0)
+				if ((bytes[i] & 0b11111110) == 0b11111100 && extra >= 5 && IsContinuation(1) && IsContinuation(2) && IsContinuation(3) && IsContinuation(4) && IsContinuation(5) &&
+					(bytes[i] & 0b00000001 | bytes[i + 1] & 0b00111100) != 0)
 					return true;
 			}
 			return false;
