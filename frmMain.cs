@@ -31,7 +31,7 @@ namespace FormatCode {
 			if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
 			var formatter = new CodeFormatter {
 				TabSize = Int32.Parse(txtTabSize.Text),
-				TabsAsSpaces = rbTabsAsSpaces.Checked,
+				TabStyle = rbTabStyleTabs.Checked ? TabStyle.Tabs : rbTabStyleSpaces.Checked ? TabStyle.Spaces : TabStyle.Detect,
 				MoveOpenBracesUp = chkMoveOpenBracesUp.Checked,
 				RequireNewLineAtEnd = chkRequireNewLineAtEnd.Checked,
 				PreserveNewLineType = chkPreserveNewLineType.Checked
@@ -67,7 +67,7 @@ namespace FormatCode {
 				int processedCount = 0;
 				TimeSpan uiUpdateInterval = TimeSpan.FromMilliseconds(15);
 				DateTime nextUIUpdateTime = DateTime.UtcNow;
-				void FormatFile(string path) {
+				void Process(string path) {
 					try {
 						formatter.Format(path);
 					}
@@ -92,7 +92,7 @@ namespace FormatCode {
 
 				string errorMessage = null;
 				try {
-					Parallel.ForEach(paths, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, FormatFile);
+					Parallel.ForEach(paths, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, Process);
 				}
 				catch (AggregateException ae) {
 					errorMessage = ae.InnerException?.Message ?? "(Empty AggregateException)";

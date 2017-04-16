@@ -21,7 +21,7 @@ namespace FormatCode {
 
 		public int TabSize { get; set; } = 4;
 
-		public bool TabsAsSpaces { get; set; }
+		public TabStyle TabStyle { get; set; } = TabStyle.Tabs;
 
 		public bool MoveOpenBracesUp { get; set; }
 
@@ -47,11 +47,13 @@ namespace FormatCode {
 				Environment.NewLine;
 			bool fileEndsWithLineEnd = code.Length >= 1 && code[code.Length - 1] == '\n';
 			int i = 0;
-			List<string> lines = new List<string>();
+			List<OutputLine> lines = new List<OutputLine>();
 			LineInfo prevLineInfo = null;
 			Context currentContext = new NormalContext();
 			Stack<Context> contexts = new Stack<Context>(new[] { currentContext });
 			bool isInInterpolatedStringFormatSection = false;
+			int tabbedIndentationCount = 0;
+			int spacedIndentationCount = 0;
 
 			char Peek(int offset) {
 				const int maxSpill = 1024;
@@ -74,7 +76,7 @@ namespace FormatCode {
 				contexts.Pop();
 				currentContext = contexts.Peek();
 			}
-			Context PreviousContext() => contexts.Count > 1 ? contexts.ElementAt(1) : null;
+			Context PreviousContext() => contexts.ElementAtOrDefault(1);
 
 			bool hasBOM = Peek(0) == bomChar;
 			if (hasBOM) {
@@ -85,7 +87,9 @@ namespace FormatCode {
 				LineInfo lineInfo = new LineInfo();
 
 				while (Peek(0) == ' ' || Peek(0) == '\t') {
-					lineInfo.LeadingWhitespaceCount += Peek(0) == '\t' ? (TabSize - (lineInfo.LeadingWhitespaceCount % 4)) : 1;
+					bool isTab = Peek(0) == '\t';
+					lineInfo.IndentationSize += isTab ? (TabSize - (lineInfo.IndentationSize % 4)) : 1;
+					lineInfo.IndentationContainsTabs |= isTab;
 					i++;
 				}
 
@@ -221,14 +225,16 @@ namespace FormatCode {
 				lineInfo.IsEmpty = lineSubstance.Length == 0;
 				lineInfo.IsEmptyAfterEndingWithOpenBrace = prevLineInfo != null && lineInfo.IsEmpty && prevLineInfo.EndsWithOpenBrace;
 				bool skippedLine = false;
-				string MakeIndentation(int count) => TabsAsSpaces ? new string(' ', count) : new string('\t', count / 4) + new string(' ', count % 4);
-				string line = lineInfo.IsEmpty ? "" : MakeIndentation(lineInfo.LeadingWhitespaceCount) + lineSubstance;
+				OutputLine line = new OutputLine {
+					Substance = lineSubstance,
+					IndentationSize = lineInfo.IsEmpty ? 0 : lineInfo.IndentationSize
+				};
 
-				if (MoveOpenBracesUp && prevLineInfo != null && lineSubstance == "{" && lineInfo.LeadingWhitespaceCount == prevLineInfo.LeadingWhitespaceCount &&
+				if (MoveOpenBracesUp && prevLineInfo != null && lineSubstance == "{" && lineInfo.IndentationSize == prevLineInfo.IndentationSize &&
 					!prevLineInfo.IsEmpty && !prevLineInfo.EndsWithComment && !prevLineInfo.IsPreprocessorDirective && !prevLineInfo.EndsWithCloseBrace &&
 					!prevLineInfo.EndsWithSemicolon && !prevLineInfo.EndsWithComma)
 				{
-					lines[lines.Count - 1] += " {";
+					lines[lines.Count - 1].Substance += " {";
 				}
 				else if (prevLineInfo != null && lineInfo.IsEmpty && prevLineInfo.IsEmpty) {
 					skippedLine = true;
@@ -246,6 +252,13 @@ namespace FormatCode {
 					lines.Add(line);
 				}
 
+				if (lineInfo.IndentationSize != 0) {
+					if (lineInfo.IndentationContainsTabs)
+						tabbedIndentationCount++;
+					else
+						spacedIndentationCount++;
+				}
+
 				i++;
 				if (!skippedLine) {
 					prevLineInfo = lineInfo;
@@ -256,17 +269,28 @@ namespace FormatCode {
 				throw new Exception("Detected incomplete verbatim interpolated string.");
 			}
 
-			if (lines.Count != 0 && lines[lines.Count - 1].Length == 0) {
+			if (lines.Count != 0 && lines[lines.Count - 1].Substance.Length == 0) {
 				lines.RemoveAt(lines.Count - 1);
 			}
 
 			StringBuilder newCodeSB = new StringBuilder(codeStrRaw.Length);
+			bool tabsAsSpaces = TabStyle == TabStyle.Spaces || (TabStyle == TabStyle.Detect && spacedIndentationCount > tabbedIndentationCount);
+			void AppendIndentation(int size) {
+				if (tabsAsSpaces) {
+					newCodeSB.Append(' ', size);
+				}
+				else {
+					newCodeSB.Append('\t', size / 4);
+					newCodeSB.Append(' ',  size % 4);
+				}
+			}
 			if (hasBOM) {
 				newCodeSB.Append(bomChar);
 			}
 			for (int iLine = 0; iLine < lines.Count; iLine++) {
 				if (iLine != 0) newCodeSB.Append(outputNewLine);
-				foreach (char c in lines[iLine]) {
+				AppendIndentation(lines[iLine].IndentationSize);
+				foreach (char c in lines[iLine].Substance) {
 					if (c != '\n')
 						newCodeSB.Append(c);
 					else
@@ -360,55 +384,64 @@ namespace FormatCode {
 		private static string NormalizeNewLines(string src, out NewLineType detectedNewLineType) {
 			char[] dst = new char[src.Length];
 			int iDst = 0;
-			NewLineType type = NewLineType.None;
-			void UpdateType(NewLineType newType) {
-				if (type == NewLineType.None) {
-					type = newType;
-				}
-				else if (type != NewLineType.Mixed && newType != type) {
-					type = NewLineType.Mixed;
-				}
-			}
+			int crlfCount = 0;
+			int lfCount = 0;
+			int crCount = 0;
 			for (int iSrc = 0; iSrc < src.Length; iSrc++) {
 				if (src[iSrc] == '\r') {
 					if (iSrc < src.Length - 1 && src[iSrc + 1] == '\n') {
-						UpdateType(NewLineType.CRLF);
+						crlfCount++;
 						iSrc++;
 					}
 					else {
-						UpdateType(NewLineType.CR);
+						crCount++;
 					}
 					dst[iDst++] = '\n';
 				}
 				else if (src[iSrc] == '\n') {
-					UpdateType(NewLineType.LF);
+					lfCount++;
 					dst[iDst++] = '\n';
 				}
 				else {
 					dst[iDst++] = src[iSrc];
 				}
 			}
-			detectedNewLineType = type;
+			var stats = new[] {
+				new { Type = NewLineType.CRLF, Count = crlfCount },
+				new { Type = NewLineType.LF, Count = lfCount },
+				new { Type = NewLineType.CR, Count = crCount }
+			};
+			detectedNewLineType =
+				(from s in stats
+				 where s.Count != 0
+				 orderby s.Count descending
+				 select (NewLineType?)s.Type).FirstOrDefault() ?? NewLineType.None;
 			return new string(dst, 0, iDst);
 		}
 
 		private class LineInfo {
-			public int LeadingWhitespaceCount;
-			public bool EndsWithSingleLineComment;
-			public bool EndsWithXmlDocComment;
-			public bool EndsWithMultiLineComment;
-			public bool IsPreprocessorDirective;
-			public bool EndsWithOpenBrace;
-			public bool EndsWithCloseBrace;
-			public bool EndsWithSemicolon;
-			public bool EndsWithComma;
-			public bool IsEmpty;
-			public bool IsEmptyAfterEndingWithOpenBrace;
+			public int IndentationSize { get; set; }
+			public bool IndentationContainsTabs { get; set; }
+			public bool EndsWithSingleLineComment { get; set; }
+			public bool EndsWithXmlDocComment { get; set; }
+			public bool EndsWithMultiLineComment { get; set; }
+			public bool IsPreprocessorDirective { get; set; }
+			public bool EndsWithOpenBrace { get; set; }
+			public bool EndsWithCloseBrace { get; set; }
+			public bool EndsWithSemicolon { get; set; }
+			public bool EndsWithComma { get; set; }
+			public bool IsEmpty { get; set; }
+			public bool IsEmptyAfterEndingWithOpenBrace { get; set; }
 
 			public bool EndsWithComment =>
 				EndsWithSingleLineComment ||
 				EndsWithXmlDocComment ||
 				EndsWithMultiLineComment;
+		}
+
+		private class OutputLine {
+			public string Substance { get; set; }
+			public int IndentationSize { get; set; }
 		}
 
 		private abstract class Context {
@@ -433,8 +466,13 @@ namespace FormatCode {
 			None,
 			CRLF,
 			LF,
-			CR,
-			Mixed
+			CR
 		}
+	}
+
+	public enum TabStyle {
+		Tabs,
+		Spaces,
+		Detect
 	}
 }
