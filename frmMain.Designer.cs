@@ -25,6 +25,7 @@
 		private void InitializeComponent() {
 			this.chkMoveOpenBracesUp = new System.Windows.Forms.CheckBox();
 			this.chkRequireNewLineAtEnd = new System.Windows.Forms.CheckBox();
+			this.chkPreserveNewLineType = new System.Windows.Forms.CheckBox();
 			this.txtTabSize = new System.Windows.Forms.TextBox();
 			this.lblTabSize = new System.Windows.Forms.Label();
 			this.panMain = new System.Windows.Forms.Panel();
@@ -59,6 +60,16 @@
 			this.chkRequireNewLineAtEnd.Text = "Require newline at end of file";
 			this.chkRequireNewLineAtEnd.UseVisualStyleBackColor = true;
 			// 
+			// chkPreserveNewLineType
+			// 
+			this.chkPreserveNewLineType.AutoSize = true;
+			this.chkPreserveNewLineType.Location = new System.Drawing.Point(12, 112);
+			this.chkPreserveNewLineType.Name = "chkPreserveNewLineType";
+			this.chkPreserveNewLineType.Size = new System.Drawing.Size(130, 17);
+			this.chkPreserveNewLineType.TabIndex = 3;
+			this.chkPreserveNewLineType.Text = "Preserve newline type";
+			this.chkPreserveNewLineType.UseVisualStyleBackColor = true;
+			// 
 			// txtTabSize
 			// 
 			this.txtTabSize.Location = new System.Drawing.Point(44, 16);
@@ -81,9 +92,10 @@
 			this.panMain.Controls.Add(this.grpTabs);
 			this.panMain.Controls.Add(this.chkMoveOpenBracesUp);
 			this.panMain.Controls.Add(this.chkRequireNewLineAtEnd);
+			this.panMain.Controls.Add(this.chkPreserveNewLineType);
 			this.panMain.Location = new System.Drawing.Point(0, 0);
 			this.panMain.Name = "panMain";
-			this.panMain.Size = new System.Drawing.Size(248, 116);
+			this.panMain.Size = new System.Drawing.Size(248, 136);
 			this.panMain.TabIndex = 0;
 			// 
 			// grpTabs
@@ -177,6 +189,7 @@
 
 		private System.Windows.Forms.CheckBox chkMoveOpenBracesUp;
 		private System.Windows.Forms.CheckBox chkRequireNewLineAtEnd;
+		private System.Windows.Forms.CheckBox chkPreserveNewLineType;
 		private System.Windows.Forms.TextBox txtTabSize;
 		private System.Windows.Forms.Label lblTabSize;
 		private System.Windows.Forms.Panel panMain;

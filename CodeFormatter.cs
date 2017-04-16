@@ -19,6 +19,8 @@ namespace FormatCode {
 
 		public bool RequireNewLineAtEnd { get; set; }
 
+		public bool PreserveNewLineType { get; set; }
+
 		public void Format(string path) {
 			const char bomChar = '\uFEFF';
 			byte[] codeBytes = File.ReadAllBytes(path);
@@ -27,6 +29,12 @@ namespace FormatCode {
 			if (!AreByteArraysEqual(codeBytes, encoding.GetBytes(codeStrRaw))) {
 				throw new Exception("Misdetected character encoding!");
 			}
+			NewLineType inputNewLineType = PreserveNewLineType ? DetectNewLineType(codeStrRaw) : NewLineType.None;
+			string outputNewLine =
+				inputNewLineType == NewLineType.CRLF ? "\r\n" :
+				inputNewLineType == NewLineType.LF ? "\n" :
+				inputNewLineType == NewLineType.CR ? "\r" :
+				Environment.NewLine;
 			string code = new StringBuilder(codeStrRaw).Replace("\r\n", "\n").Replace("\r", "\n").ToString();
 			bool fileEndsWithLineEnd = code.Length >= 1 && code[code.Length - 1] == '\n';
 			int i = 0;
@@ -241,7 +249,9 @@ namespace FormatCode {
 			if (RequireNewLineAtEnd || fileEndsWithLineEnd) {
 				newCodeSB.Append("\n");
 			}
-			newCodeSB = newCodeSB.Replace("\n", Environment.NewLine);
+			if (outputNewLine != "\n") {
+				newCodeSB = newCodeSB.Replace("\n", outputNewLine);
+			}
 			string newCode = newCodeSB.ToString();
 			if (!StringEqualsIgnoreWhitespace(code, newCode)) {
 				throw new Exception("Code contents changed!");
@@ -320,6 +330,32 @@ namespace FormatCode {
 			return false;
 		}
 
+		private static NewLineType DetectNewLineType(string str) {
+			NewLineType type = NewLineType.None;
+			void UpdateType(NewLineType newType) {
+				if (type == NewLineType.None) {
+					type = newType;
+				}
+				else if (type != NewLineType.Mixed && newType != type) {
+					type = NewLineType.Mixed;
+				}
+			}
+			for (int i = 0; i < str.Length; i++) {
+				if (str[i] == '\r') {
+					if (i < str.Length - 1 && str[++i] == '\n') {
+						UpdateType(NewLineType.CRLF);
+					}
+					else {
+						UpdateType(NewLineType.CR);
+					}
+				}
+				else if (str[i] == '\n') {
+					UpdateType(NewLineType.LF);
+				}
+			}
+			return type;
+		}
+
 		private class LineInfo {
 			public int LeadingWhitespaceCount;
 			public bool EndsWithComment;
@@ -345,10 +381,18 @@ namespace FormatCode {
 		private class VerbatimInterpolatedStringContext : Context { }
 
 		private enum BOMType {
-			None = 0,
-			UTF8 = 1,
-			UTF16LE = 2,
-			UTF16BE = 3
+			None,
+			UTF8,
+			UTF16LE,
+			UTF16BE
+		}
+
+		private enum NewLineType {
+			None,
+			CRLF,
+			LF,
+			CR,
+			Mixed
 		}
 	}
 }

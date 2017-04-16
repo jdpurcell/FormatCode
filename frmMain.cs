@@ -28,7 +28,8 @@ namespace FormatCode {
 				TabSize = Int32.Parse(txtTabSize.Text),
 				TabsAsSpaces = rbTabsAsSpaces.Checked,
 				MoveOpenBracesUp = chkMoveOpenBracesUp.Checked,
-				RequireNewLineAtEnd = chkRequireNewLineAtEnd.Checked
+				RequireNewLineAtEnd = chkRequireNewLineAtEnd.Checked,
+				PreserveNewLineType = chkPreserveNewLineType.Checked
 			};
 			var dirsAndFiles = (string[])e.Data.GetData(DataFormats.FileDrop);
 			FormatCode(formatter, dirsAndFiles);
