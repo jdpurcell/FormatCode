@@ -29,13 +29,12 @@ namespace FormatCode {
 			if (!AreByteArraysEqual(codeBytes, encoding.GetBytes(codeStrRaw))) {
 				throw new Exception("Misdetected character encoding!");
 			}
-			NewLineType inputNewLineType = PreserveNewLineType ? DetectNewLineType(codeStrRaw) : NewLineType.None;
-			string outputNewLine =
+			string code = NormalizeNewLines(codeStrRaw, out NewLineType inputNewLineType);
+			string outputNewLine = !PreserveNewLineType ? Environment.NewLine :
 				inputNewLineType == NewLineType.CRLF ? "\r\n" :
 				inputNewLineType == NewLineType.LF ? "\n" :
 				inputNewLineType == NewLineType.CR ? "\r" :
 				Environment.NewLine;
-			string code = new StringBuilder(codeStrRaw).Replace("\r\n", "\n").Replace("\r", "\n").ToString();
 			bool fileEndsWithLineEnd = code.Length >= 1 && code[code.Length - 1] == '\n';
 			int i = 0;
 			List<string> lines = new List<string>();
@@ -241,16 +240,21 @@ namespace FormatCode {
 				lines.RemoveAt(lines.Count - 1);
 			}
 
-			StringBuilder newCodeSB = new StringBuilder();
+			StringBuilder newCodeSB = new StringBuilder(codeStrRaw.Length);
 			if (hasBOM) {
 				newCodeSB.Append(bomChar);
 			}
-			newCodeSB.Append(String.Join("\n", lines));
-			if (RequireNewLineAtEnd || fileEndsWithLineEnd) {
-				newCodeSB.Append("\n");
+			for (int iLine = 0; iLine < lines.Count; iLine++) {
+				if (iLine != 0) newCodeSB.Append(outputNewLine);
+				foreach (char c in lines[iLine]) {
+					if (c != '\n')
+						newCodeSB.Append(c);
+					else
+						newCodeSB.Append(outputNewLine);
+				}
 			}
-			if (outputNewLine != "\n") {
-				newCodeSB = newCodeSB.Replace("\n", outputNewLine);
+			if (RequireNewLineAtEnd || fileEndsWithLineEnd) {
+				newCodeSB.Append(outputNewLine);
 			}
 			string newCode = newCodeSB.ToString();
 			if (!StringEqualsIgnoreWhitespace(code, newCode)) {
@@ -274,14 +278,16 @@ namespace FormatCode {
 			int iA = 0;
 			int iB = 0;
 
-			while (iA < strA.Length && Char.IsWhiteSpace(strA, iA)) iA++;
-			while (iB < strB.Length && Char.IsWhiteSpace(strB, iB)) iB++;
+			bool IsWhitespace(char c) => c == ' ' || c == '\t' || c == '\r' || c == '\n';
+
+			while (iA < strA.Length && IsWhitespace(strA[iA])) iA++;
+			while (iB < strB.Length && IsWhitespace(strB[iB])) iB++;
 
 			while (iA < strA.Length && iB < strB.Length) {
 				if (strA[iA++] != strB[iB++]) return false;
 
-				while (iA < strA.Length && Char.IsWhiteSpace(strA, iA)) iA++;
-				while (iB < strB.Length && Char.IsWhiteSpace(strB, iB)) iB++;
+				while (iA < strA.Length && IsWhitespace(strA[iA])) iA++;
+				while (iB < strB.Length && IsWhitespace(strB[iB])) iB++;
 			}
 
 			return iA == strA.Length && iB == strB.Length;
@@ -309,6 +315,7 @@ namespace FormatCode {
 
 		private static bool HasUTF8Sequence(byte[] bytes) {
 			for (int i = 0; i < bytes.Length; i++) {
+				if ((bytes[i] & 0x80) == 0) continue;
 				int extra = bytes.Length - i - 1;
 				bool IsContinuation(int offset) => (bytes[i + offset] & 0b11000000) == 0b10000000;
 				if ((bytes[i] & 0b11100000) == 0b11000000 && extra >= 1 && IsContinuation(1) &&
@@ -330,7 +337,9 @@ namespace FormatCode {
 			return false;
 		}
 
-		private static NewLineType DetectNewLineType(string str) {
+		private static string NormalizeNewLines(string src, out NewLineType detectedNewLineType) {
+			char[] dst = new char[src.Length];
+			int iDst = 0;
 			NewLineType type = NewLineType.None;
 			void UpdateType(NewLineType newType) {
 				if (type == NewLineType.None) {
@@ -340,20 +349,27 @@ namespace FormatCode {
 					type = NewLineType.Mixed;
 				}
 			}
-			for (int i = 0; i < str.Length; i++) {
-				if (str[i] == '\r') {
-					if (i < str.Length - 1 && str[++i] == '\n') {
+			for (int iSrc = 0; iSrc < src.Length; iSrc++) {
+				if (src[iSrc] == '\r') {
+					if (iSrc < src.Length - 1 && src[iSrc + 1] == '\n') {
 						UpdateType(NewLineType.CRLF);
+						iSrc++;
 					}
 					else {
 						UpdateType(NewLineType.CR);
 					}
+					dst[iDst++] = '\n';
 				}
-				else if (str[i] == '\n') {
+				else if (src[iSrc] == '\n') {
 					UpdateType(NewLineType.LF);
+					dst[iDst++] = '\n';
+				}
+				else {
+					dst[iDst++] = src[iSrc];
 				}
 			}
-			return type;
+			detectedNewLineType = type;
+			return new string(dst, 0, iDst);
 		}
 
 		private class LineInfo {
