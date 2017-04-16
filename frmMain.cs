@@ -8,10 +8,15 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace FormatCode {
 	public partial class frmMain : Form {
+		private static readonly string[] _ignoreNames = new string[] {  };
+		private static readonly string[] _ignoreSuffixes = new string[] {  };
+		private static readonly string[] _ignoreDirectories = new string[] {  };
+
 		public frmMain() {
 			InitializeComponent();
 		}
@@ -32,50 +37,67 @@ namespace FormatCode {
 				PreserveNewLineType = chkPreserveNewLineType.Checked
 			};
 			var dirsAndFiles = (string[])e.Data.GetData(DataFormats.FileDrop);
-			FormatCode(formatter, dirsAndFiles);
+			FormatCode(formatter, EnumerateCodeFiles(dirsAndFiles));
 		}
 
-		private void FormatCode(CodeFormatter formatter, string[] dirsAndFiles) {
-			void Run() {
-				IEnumerable<string> paths = Enumerable.Empty<string>();
-				foreach (string path in dirsAndFiles) {
-					if (File.Exists(path)) {
-						paths = paths.Concat(Enumerable.Repeat(path, 1));
-					}
-					else if (Directory.Exists(path)) {
-						paths = paths.Concat(Directory.EnumerateFiles(path, "*.cs", SearchOption.AllDirectories));
+		private static IEnumerable<string> EnumerateCodeFiles(string[] dirsAndFiles) {
+			bool IsExcluded(string path) =>
+				!Path.GetExtension(path).Equals(".cs", StringComparison.OrdinalIgnoreCase) ||
+				_ignoreNames.Any(n => Path.GetFileName(path).Equals(n, StringComparison.OrdinalIgnoreCase)) ||
+				_ignoreSuffixes.Any(s => path.EndsWith(s, StringComparison.OrdinalIgnoreCase)) ||
+				_ignoreDirectories.Any(d => path.IndexOf($@"\{d}\", StringComparison.OrdinalIgnoreCase) != -1);
+
+			foreach (string path in dirsAndFiles) {
+				if (File.Exists(path) && !IsExcluded(path)) {
+					yield return path;
+				}
+				else if (Directory.Exists(path)) {
+					foreach (string filePath in Directory.EnumerateFiles(path, "*.cs", SearchOption.AllDirectories)) {
+						if (!IsExcluded(filePath)) {
+							yield return filePath;
+						}
 					}
 				}
+			}
+		}
 
-				string[] ignoreNames = new string[] {  };
-				string[] ignoreSuffixes = new string[] {  };
-				string[] ignoreDirectories = new string[] {  };
-
+		private void FormatCode(CodeFormatter formatter, IEnumerable<string> paths) {
+			void Run() {
+				object syncObj = new object();
 				int processedCount = 0;
 				TimeSpan uiUpdateInterval = TimeSpan.FromMilliseconds(15);
 				DateTime nextUIUpdateTime = DateTime.UtcNow;
-				string errorMessage = null;
-				foreach (string path in paths) {
-					if (!Path.GetExtension(path).Equals(".cs", StringComparison.OrdinalIgnoreCase)) continue;
-					if (ignoreNames.Any(n => Path.GetFileName(path).Equals(n, StringComparison.OrdinalIgnoreCase))) continue;
-					if (ignoreSuffixes.Any(s => path.EndsWith(s, StringComparison.OrdinalIgnoreCase))) continue;
-					if (ignoreDirectories.Any(d => path.IndexOf($@"\{d}\", StringComparison.OrdinalIgnoreCase) != -1)) continue;
+				void FormatFile(string path) {
 					try {
 						formatter.Format(path);
 					}
 					catch (Exception ex) {
-						errorMessage = $"{path}\r\n{ex.Message}";
-						break;
+						throw new Exception($"{path}\r\n\r\n{ex.Message}");
 					}
-					processedCount++;
-					DateTime timeNow = DateTime.UtcNow;
-					if (timeNow >= nextUIUpdateTime) {
+					string newStatus = null;
+					lock (syncObj) {
+						processedCount++;
+						DateTime timeNow = DateTime.UtcNow;
+						if (timeNow >= nextUIUpdateTime) {
+							newStatus = $"Processed {processedCount:#,##0} files.";
+							nextUIUpdateTime = timeNow + uiUpdateInterval;
+						}
+					}
+					if (newStatus != null) {
 						this.Invoke(() => {
-							lblStatus.Text = $"Processed {processedCount:#,##0} files.";
+							lblStatus.Text = newStatus;
 						});
-						nextUIUpdateTime = timeNow + uiUpdateInterval;
 					}
 				}
+
+				string errorMessage = null;
+				try {
+					Parallel.ForEach(paths, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, FormatFile);
+				}
+				catch (AggregateException ae) {
+					errorMessage = ae.InnerException?.Message ?? "(Empty AggregateException)";
+				}
+
 				this.BeginInvoke(() => {
 					Application.UseWaitCursor = false;
 					Activate();
