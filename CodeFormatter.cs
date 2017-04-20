@@ -29,7 +29,9 @@ namespace FormatCode {
 
 		public bool PreserveNewLineType { get; set; }
 
-		public bool PreserveTrailingSpacesInComments { get; set; }
+		public bool LeaveTrailingWhitespaceInCode { get; set; }
+
+		public bool LeaveTrailingWhitespaceInComments { get; set; }
 
 		public void Format(string path) {
 			const char bomChar = '\uFEFF';
@@ -214,21 +216,20 @@ namespace FormatCode {
 					throw new Exception("Detected incomplete interpolated string.");
 				}
 
-				string lineSubstance = code.Substring(lineSubstanceStart, i - lineSubstanceStart);
-				if (!PreserveTrailingSpacesInComments || (!lineInfo.EndsWithSingleLineComment && !lineInfo.EndsWithXmlDocComment)) {
-					lineSubstance = lineSubstance.TrimEnd(' ', '\t');
-				}
+				string lineSubstanceRaw = code.Substring(lineSubstanceStart, i - lineSubstanceStart);
+				string lineSubstance = lineSubstanceRaw.TrimEnd(' ', '\t');
 				lineInfo.EndsWithOpenBrace = !lineInfo.EndsWithComment && !lineInfo.IsPreprocessorDirective && lineSubstance.EndsWith("{");
 				lineInfo.EndsWithCloseBrace = !lineInfo.EndsWithComment && !lineInfo.IsPreprocessorDirective && lineSubstance.EndsWith("}");
 				lineInfo.EndsWithSemicolon = !lineInfo.EndsWithComment && !lineInfo.IsPreprocessorDirective && lineSubstance.EndsWith(";");
 				lineInfo.EndsWithComma = !lineInfo.EndsWithComment && !lineInfo.IsPreprocessorDirective && lineSubstance.EndsWith(",");
 				lineInfo.IsEmpty = lineSubstance.Length == 0;
 				lineInfo.IsEmptyAfterEndingWithOpenBrace = prevLineInfo != null && lineInfo.IsEmpty && prevLineInfo.EndsWithOpenBrace;
-				bool skippedLine = false;
+				bool leaveTrailingWhitespace = lineInfo.EndsWithSingleLineComment || lineInfo.EndsWithXmlDocComment ? LeaveTrailingWhitespaceInComments : LeaveTrailingWhitespaceInCode;
 				OutputLine line = new OutputLine {
-					Substance = lineSubstance,
-					IndentationSize = lineInfo.IsEmpty ? 0 : lineInfo.IndentationSize
+					Substance = !leaveTrailingWhitespace ? lineSubstance : lineSubstanceRaw,
+					IndentationSize = !leaveTrailingWhitespace && lineInfo.IsEmpty ? 0 : lineInfo.IndentationSize
 				};
+				bool skippedLine = false;
 
 				if (MoveOpenBracesUp && prevLineInfo != null && lineSubstance == "{" && lineInfo.IndentationSize == prevLineInfo.IndentationSize &&
 					!prevLineInfo.IsEmpty && !prevLineInfo.EndsWithComment && !prevLineInfo.IsPreprocessorDirective && !prevLineInfo.EndsWithCloseBrace &&
