@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // General Information about an assembly is controlled through the following
@@ -8,9 +7,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Code Formatter")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("J.D. Purcell")]
 [assembly: AssemblyProduct("Code Formatter")]
-[assembly: AssemblyCopyright("Copyright 2011 J.D. Purcell")]
+[assembly: AssemblyCopyright("© J.D. Purcell")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
