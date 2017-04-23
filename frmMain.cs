@@ -13,9 +13,9 @@ using System.Windows.Forms;
 
 namespace FormatCode {
 	public partial class frmMain : Form {
-		private static readonly string[] _ignoreNames = new string[] {  };
-		private static readonly string[] _ignoreSuffixes = new string[] {  };
-		private static readonly string[] _ignoreDirectories = new string[] {  };
+		private static readonly string[] _ignoreNames = {  };
+		private static readonly string[] _ignoreSuffixes = {  };
+		private static readonly string[] _ignoreDirectories = {  };
 
 		public frmMain() {
 			InitializeComponent();
