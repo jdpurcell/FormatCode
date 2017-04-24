@@ -33,6 +33,8 @@ namespace FormatCode {
 
 		public bool LeaveTrailingWhitespaceInComments { get; set; }
 
+		public bool LeaveEmptyLines { get; set; }
+
 		public void Format(string path) {
 			const char bomChar = '\uFEFF';
 			byte[] codeBytes = File.ReadAllBytes(path);
@@ -303,7 +305,7 @@ namespace FormatCode {
 			Line prevLine = peekLine(-1);
 			Line nextLine = peekLine(1);
 
-			if (line.IsEmpty) {
+			if (!LeaveEmptyLines && line.IsEmpty) {
 				bool isDuplicate = prevLine?.IsEmpty ?? false;
 				bool isAfterXmlDocComment = prevLine?.EndsWithXmlDocComment ?? false;
 				bool isAfterOpenBrace = prevLine?.CodeEndsWith('{') ?? false;
