@@ -31,8 +31,14 @@ namespace FormatCode {
 			if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
 			var formatter = new CodeFormatter {
 				TabSize = Int32.Parse(txtTabSize.Text),
-				TabStyle = rbTabStyleTabs.Checked ? TabStyle.Tabs : rbTabStyleSpaces.Checked ? TabStyle.Spaces : TabStyle.Detect,
-				MoveOpenBracesUp = chkMoveOpenBracesUp.Checked,
+				TabStyle =
+					rbTabStyleTabs.Checked ? TabStyle.Tabs :
+					rbTabStyleSpaces.Checked ? TabStyle.Spaces :
+					TabStyle.Detect,
+				OpenBraceStyle =
+					rbOpenBracesMoveDown.Checked ? OpenBraceStyle.MoveDown :
+					rbOpenBracesMoveUp.Checked ? OpenBraceStyle.MoveUp :
+					OpenBraceStyle.LeaveAlone,
 				RequireNewLineAtEnd = chkRequireNewLineAtEnd.Checked,
 				PreserveNewLineType = chkPreserveNewLineType.Checked
 			};
