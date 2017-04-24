@@ -333,7 +333,7 @@ namespace FormatCode {
 
 					bool matchIndentation = nextLine.CodeStartsWith('}') || StartsWithLabel(nextLine.Substance);
 					Line insertLine = new Line(this);
-					insertLine.IndentationSize = matchIndentation ? nextLine.IndentationSize : Math.Max(nextLine.IndentationSize - TabSize, 0);
+					insertLine.IndentationSize = Math.Max(matchIndentation ? nextLine.IndentationSize : nextLine.IndentationSize - TabSize, line.IndentationSize);
 					insertLine.IndentationContainsTabs = nextLine.IndentationContainsTabs;
 					insertLine.SetSubstanceRaw("{");
 					insertLineAfterCurrent(insertLine);
