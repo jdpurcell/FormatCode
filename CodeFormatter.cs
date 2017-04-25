@@ -224,7 +224,7 @@ namespace FormatCode {
 				throw new Exception("Detected incomplete verbatim interpolated string.");
 			}
 
-			lines = ProcessLines(new LinkedList<Line>(lines));
+			ProcessLines(lines);
 
 			StringBuilder newCodeSB = new StringBuilder(codeStrRaw.Length);
 			IEnumerable<Line> indentedLines = lines.Where(l => l.IndentationSize != 0);
@@ -265,40 +265,31 @@ namespace FormatCode {
 			}
 		}
 
-		private List<Line> ProcessLines(LinkedList<Line> lines) {
-			LinkedListNode<Line> currentNode = lines.First;
+		private void ProcessLines(List<Line> lines) {
+			int iLine = 0;
 			bool shouldRemoveCurrentLine;
 
 			Line PeekLine(int offset) {
-				LinkedListNode<Line> n = currentNode;
-				while (offset > 0 && n != null) {
-					n = n.Next;
-					offset--;
-				}
-				while (offset < 0 && n != null) {
-					n = n.Previous;
-					offset++;
-				}
-				return n?.Value;
+				int idx = iLine + offset;
+				return idx >= 0 && idx < lines.Count ? lines[idx] : null;
 			}
 			void FlagCurrentLineForRemoval() {
 				shouldRemoveCurrentLine = true;
 			}
 			void InsertLineAfterCurrent(Line line) {
-				lines.AddAfter(currentNode, line);
+				lines.Insert(iLine + 1, line);
 			}
 
-			while (currentNode != null) {
+			while (iLine < lines.Count) {
 				shouldRemoveCurrentLine = false;
-				ProcessLine(currentNode.Value, PeekLine, FlagCurrentLineForRemoval, InsertLineAfterCurrent);
-				LinkedListNode<Line> nextNode = currentNode.Next;
+				ProcessLine(lines[iLine], PeekLine, FlagCurrentLineForRemoval, InsertLineAfterCurrent);
 				if (shouldRemoveCurrentLine) {
-					lines.Remove(currentNode);
+					lines.RemoveAt(iLine);
 				}
-				currentNode = nextNode;
+				else {
+					iLine++;
+				}
 			}
-
-			return lines.ToList();
 		}
 
 		private void ProcessLine(Line line, Func<int, Line> peekLine, Action flagCurrentLineForRemoval, Action<Line> insertLineAfterCurrent) {
