@@ -5,6 +5,7 @@
 // --------------------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -449,13 +450,25 @@ namespace FormatCode {
 		}
 
 		private static bool IsIdentifier(string s) {
+			bool IsStartCategory(UnicodeCategory uc) =>
+				uc == UnicodeCategory.UppercaseLetter || uc == UnicodeCategory.LowercaseLetter || uc == UnicodeCategory.TitlecaseLetter ||
+				uc == UnicodeCategory.ModifierLetter || uc == UnicodeCategory.OtherLetter || uc == UnicodeCategory.LetterNumber;
+
+			bool IsPartCategory(UnicodeCategory uc) =>
+				IsStartCategory(uc) || uc == UnicodeCategory.NonSpacingMark || uc == UnicodeCategory.SpacingCombiningMark ||
+				uc == UnicodeCategory.DecimalDigitNumber || uc == UnicodeCategory.ConnectorPunctuation || uc == UnicodeCategory.Format;
+
+			bool IsStartCharacter(char c) => c == '_' || IsStartCategory(Char.GetUnicodeCategory(c));
+
+			bool IsPartCharacter(char c) => IsPartCategory(Char.GetUnicodeCategory(c));
+
 			int i = 0;
 			if (s.Length >= 1 && s[0] == '@') i++;
 			if (i == s.Length) return false;
-			if (s[i] != '_' && !UnicodeHelper.IsIDStart(s[i])) return false;
+			if (!IsStartCharacter(s[i])) return false;
 			i++;
 			while (i < s.Length) {
-				if (!UnicodeHelper.IsIDContinue(s[i])) return false;
+				if (!IsPartCharacter(s[i])) return false;
 				i++;
 			}
 			return true;
