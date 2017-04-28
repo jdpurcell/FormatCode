@@ -370,7 +370,7 @@ namespace FormatCode {
 				return new UnicodeEncoding(false, true);
 			if (bomType == BOMType.UTF16BE)
 				return new UnicodeEncoding(true, true);
-			if (HasUTF8Sequence(bytes))
+			if (IsStronglyUTF8(bytes))
 				return new UTF8Encoding(false);
 			return null;
 		}
@@ -382,28 +382,26 @@ namespace FormatCode {
 			return BOMType.None;
 		}
 
-		private static bool HasUTF8Sequence(byte[] bytes) {
-			for (int i = 0; i < bytes.Length; i++) {
-				if ((bytes[i] & 0x80) == 0) continue;
+		private static bool IsStronglyUTF8(byte[] bytes) {
+			bool sawUTF8Sequence = false;
+			int i = 0;
+			while (i < bytes.Length) {
+				if (bytes[i] <= 0x7F)
+				{ i++; continue; }
 				int extra = bytes.Length - i - 1;
 				bool IsContinuation(int offset) => (bytes[i + offset] & 0b11000000) == 0b10000000;
 				if ((bytes[i] & 0b11100000) == 0b11000000 && extra >= 1 && IsContinuation(1) &&
 					(bytes[i] & 0b00011110) != 0)
-					return true;
+				{ i += 2; sawUTF8Sequence = true; continue; }
 				if ((bytes[i] & 0b11110000) == 0b11100000 && extra >= 2 && IsContinuation(1) && IsContinuation(2) &&
 					(bytes[i] & 0b00001111 | bytes[i + 1] & 0b00100000) != 0)
-					return true;
+				{ i += 3; sawUTF8Sequence = true; continue; }
 				if ((bytes[i] & 0b11111000) == 0b11110000 && extra >= 3 && IsContinuation(1) && IsContinuation(2) && IsContinuation(3) &&
 					(bytes[i] & 0b00000111 | bytes[i + 1] & 0b00110000) != 0)
-					return true;
-				if ((bytes[i] & 0b11111100) == 0b11111000 && extra >= 4 && IsContinuation(1) && IsContinuation(2) && IsContinuation(3) && IsContinuation(4) &&
-					(bytes[i] & 0b00000011 | bytes[i + 1] & 0b00111000) != 0)
-					return true;
-				if ((bytes[i] & 0b11111110) == 0b11111100 && extra >= 5 && IsContinuation(1) && IsContinuation(2) && IsContinuation(3) && IsContinuation(4) && IsContinuation(5) &&
-					(bytes[i] & 0b00000001 | bytes[i + 1] & 0b00111100) != 0)
-					return true;
+				{ i += 4; sawUTF8Sequence = true; continue; }
+				return false;
 			}
-			return false;
+			return sawUTF8Sequence;
 		}
 
 		private static string NormalizeNewLines(string src, out NewLineType detectedNewLineType) {
@@ -440,7 +438,7 @@ namespace FormatCode {
 				(from s in stats
 				 where s.Count != 0
 				 orderby s.Count descending
-				 select (NewLineType?)s.Type).FirstOrDefault() ?? NewLineType.None;
+				 select s.Type).DefaultIfEmpty(NewLineType.None).First();
 			return new string(dst, 0, iDst);
 		}
 
