@@ -297,7 +297,13 @@ namespace FormatCode {
 			Line prevLine = peekLine(-1);
 			Line nextLine = peekLine(1);
 
+			int nextLineOffset = 1;
+			void GetNextLine() { nextLine = peekLine(++nextLineOffset); }
+
 			if (!LeaveEmptyLines && line.IsEmpty) {
+				while (nextLine != null && nextLine.IsEmpty) {
+					GetNextLine();
+				}
 				bool isDuplicate = prevLine?.IsEmpty ?? false;
 				bool isAfterXmlDocComment = prevLine?.EndsWithXmlDocComment ?? false;
 				bool isAfterOpenBrace = prevLine?.CodeEndsWith('{') ?? false;
@@ -318,9 +324,8 @@ namespace FormatCode {
 				flagCurrentLineForRemoval();
 			}
 			else if (OpenBraceStyle == OpenBraceStyle.MoveDown && line.Substance.Length > 1 && line.CodeEndsWith('{')) {
-				int nextLineOffset = 1;
 				while (nextLine != null && (nextLine.IsEmpty || nextLine.IsPreprocessorDirective)) {
-					nextLine = peekLine(++nextLineOffset);
+					GetNextLine();
 				}
 				if (nextLine != null) {
 					line.SetSubstanceRaw(line.Substance.Substring(0, line.Substance.Length - 1).TrimEnd(' ', '\t'));
