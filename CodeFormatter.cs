@@ -99,7 +99,10 @@ namespace FormatCode {
 
 				char firstChar;
 				while ((firstChar = Peek(0)) != '\n' || !(currentContext is NormalContext)) {
-					if (currentContext is VerbatimInterpolatedStringContext || (firstChar == '$' && Peek(1) == '@' && Peek(2) == '"')) { // Verbatim interpolated string
+					if (currentContext is VerbatimInterpolatedStringContext ||
+						(firstChar == '$' && Peek(1) == '@' && Peek(2) == '"') ||
+						(firstChar == '@' && Peek(1) == '$' && Peek(2) == '"')) // Verbatim interpolated string
+					{ 
 						if (isInInterpolatedStringFormatSection) {
 							while (!(Peek(0) == '}' && Peek(1) != '}')) i += Peek(0) == '}' ? 2 : 1;
 							i++;
@@ -352,7 +355,7 @@ namespace FormatCode {
 			int iA = 0;
 			int iB = 0;
 
-			bool IsWhitespace(char c) => c == ' ' || c == '\t' || c == '\r' || c == '\n';
+			static bool IsWhitespace(char c) => c == ' ' || c == '\t' || c == '\r' || c == '\n';
 
 			while (iA < strA.Length && IsWhitespace(strA[iA])) iA++;
 			while (iB < strB.Length && IsWhitespace(strB[iB])) iB++;
@@ -453,17 +456,17 @@ namespace FormatCode {
 		}
 
 		private static bool IsIdentifier(string s) {
-			bool IsStartCategory(UnicodeCategory uc) =>
+			static bool IsStartCategory(UnicodeCategory uc) =>
 				uc == UnicodeCategory.UppercaseLetter || uc == UnicodeCategory.LowercaseLetter || uc == UnicodeCategory.TitlecaseLetter ||
 				uc == UnicodeCategory.ModifierLetter || uc == UnicodeCategory.OtherLetter || uc == UnicodeCategory.LetterNumber;
 
-			bool IsPartCategory(UnicodeCategory uc) =>
+			static bool IsPartCategory(UnicodeCategory uc) =>
 				IsStartCategory(uc) || uc == UnicodeCategory.NonSpacingMark || uc == UnicodeCategory.SpacingCombiningMark ||
 				uc == UnicodeCategory.DecimalDigitNumber || uc == UnicodeCategory.ConnectorPunctuation || uc == UnicodeCategory.Format;
 
-			bool IsStartCharacter(char c) => c == '_' || IsStartCategory(Char.GetUnicodeCategory(c));
+			static bool IsStartCharacter(char c) => c == '_' || IsStartCategory(Char.GetUnicodeCategory(c));
 
-			bool IsPartCharacter(char c) => IsPartCategory(Char.GetUnicodeCategory(c));
+			static bool IsPartCharacter(char c) => IsPartCategory(Char.GetUnicodeCategory(c));
 
 			int i = 0;
 			if (s.Length >= 1 && s[0] == '@') i++;
