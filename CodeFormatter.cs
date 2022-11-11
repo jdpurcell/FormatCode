@@ -52,9 +52,9 @@ namespace FormatCode {
 				Environment.NewLine;
 			bool fileEndsWithLineEnd = code.Length >= 1 && code[code.Length - 1] == '\n';
 			int i = 0;
-			List<Line> lines = new List<Line>();
+			List<Line> lines = new();
 			Context currentContext = new NormalContext();
-			Stack<Context> contexts = new Stack<Context>(new[] { currentContext });
+			Stack<Context> contexts = new(new[] { currentContext });
 			bool isInInterpolatedStringFormatSection = false;
 
 			char Peek(int offset) {
@@ -86,7 +86,7 @@ namespace FormatCode {
 			}
 
 			while (i < code.Length) {
-				Line line = new Line(this);
+				Line line = new(this);
 
 				while (Peek(0) == ' ' || Peek(0) == '\t') {
 					bool isTab = Peek(0) == '\t';
@@ -98,7 +98,7 @@ namespace FormatCode {
 				int lineSubstanceStart = i;
 
 				char firstChar;
-				while ((firstChar = Peek(0)) != '\n' || !(currentContext is NormalContext)) {
+				while ((firstChar = Peek(0)) != '\n' || currentContext is not NormalContext) {
 					if (currentContext is VerbatimInterpolatedStringContext ||
 						(firstChar == '$' && Peek(1) == '@' && Peek(2) == '"') ||
 						(firstChar == '@' && Peek(1) == '$' && Peek(2) == '"')) // Verbatim interpolated string
@@ -230,7 +230,7 @@ namespace FormatCode {
 
 			ProcessLines(lines);
 
-			StringBuilder newCodeSB = new StringBuilder(codeStrRaw.Length);
+			StringBuilder newCodeSB = new(codeStrRaw.Length);
 			IEnumerable<Line> indentedLines = lines.Where(l => l.IndentationSize != 0);
 			bool tabsAsSpaces = TabStyle == TabStyle.Spaces ||
 				(TabStyle == TabStyle.Detect && indentedLines.Count(l => !l.IndentationContainsTabs) > indentedLines.Count(l => l.IndentationContainsTabs));
@@ -334,7 +334,7 @@ namespace FormatCode {
 					line.SetSubstanceRaw(line.Substance.Substring(0, line.Substance.Length - 1).TrimEnd(' ', '\t'));
 
 					bool matchIndentation = nextLine.CodeStartsWith('}') || StartsWithLabel(nextLine.Substance);
-					Line insertLine = new Line(this);
+					Line insertLine = new(this);
 					insertLine.IndentationSize = Math.Max(matchIndentation ? nextLine.IndentationSize : nextLine.IndentationSize - TabSize, line.IndentationSize);
 					insertLine.IndentationContainsTabs = nextLine.IndentationContainsTabs;
 					insertLine.SetSubstanceRaw("{");

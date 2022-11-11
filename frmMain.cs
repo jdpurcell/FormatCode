@@ -29,7 +29,7 @@ namespace FormatCode {
 
 		private void frmMain_DragDrop(object sender, DragEventArgs e) {
 			if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
-			var formatter = new CodeFormatter {
+			CodeFormatter formatter = new() {
 				TabSize = Int32.Parse(txtTabSize.Text),
 				TabStyle =
 					rbTabStyleTabs.Checked ? TabStyle.Tabs :
@@ -42,7 +42,7 @@ namespace FormatCode {
 				RequireNewLineAtEnd = chkRequireNewLineAtEnd.Checked,
 				PreserveNewLineType = chkPreserveNewLineType.Checked
 			};
-			var dirsAndFiles = (string[])e.Data.GetData(DataFormats.FileDrop);
+			string[] dirsAndFiles = (string[])e.Data.GetData(DataFormats.FileDrop);
 			FormatCode(formatter, EnumerateCodeFiles(dirsAndFiles));
 		}
 
@@ -69,7 +69,7 @@ namespace FormatCode {
 
 		private void FormatCode(CodeFormatter formatter, IEnumerable<string> paths) {
 			void Run() {
-				object syncObj = new object();
+				object syncObj = new();
 				int processedCount = 0;
 				TimeSpan uiUpdateInterval = TimeSpan.FromMilliseconds(15);
 				DateTime nextUIUpdateTime = DateTime.UtcNow;
