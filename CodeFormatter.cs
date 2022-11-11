@@ -69,6 +69,16 @@ public class CodeFormatter {
 			}
 			throw new Exception("Detected unterminated sequence.");
 		}
+		IEnumerable<char> PeekWhile(Predicate<char> predicate, bool reverse = false) {
+			int offset = 0;
+			int step = reverse ? -1 : 1;
+			while (true) {
+				char c = Peek(offset);
+				if (!predicate(c)) yield break;
+				yield return c;
+				offset += step;
+			}
+		}
 		bool CodeStartsWithAnyIgnoreCase(string[] values) => values.Any(v => String.Compare(code, i, v, 0, v.Length, StringComparison.OrdinalIgnoreCase) == 0);
 
 		void PushContext(Context context) {
@@ -100,19 +110,20 @@ public class CodeFormatter {
 
 			char firstChar;
 			while ((firstChar = Peek(0)) != '\n' || currentContext is not NormalContext) {
+				// Verbatim interpolated string
 				if (currentContext is VerbatimInterpolatedStringContext ||
 					(firstChar == '$' && Peek(1) == '@' && Peek(2) == '"') ||
-					(firstChar == '@' && Peek(1) == '$' && Peek(2) == '"')) // Verbatim interpolated string
-				{ 
+					(firstChar == '@' && Peek(1) == '$' && Peek(2) == '"'))
+				{
 					if (isInInterpolatedStringFormatSection) {
-						while (!(Peek(0) == '}' && Peek(1) != '}')) i += Peek(0) == '}' ? 2 : 1;
+						while (Peek(0) != '}') i++;
 						i++;
 						isInInterpolatedStringFormatSection = false;
 					}
 					else {
 						if (currentContext is NormalContext) {
-							PushContext(new VerbatimInterpolatedStringContext());
 							i += 3;
+							PushContext(new VerbatimInterpolatedStringContext());
 						}
 						bool IsEndQuote() => Peek(0) == '"' && Peek(1) != '"';
 						bool IsCodeSection() => Peek(0) == '{' && Peek(1) != '{';
@@ -123,19 +134,72 @@ public class CodeFormatter {
 						else if (IsEndQuote()) {
 							PopContext();
 						}
+						else throw new InvalidOperationException();
 						i++;
 					}
 				}
-				else if (currentContext is InterpolatedStringContext || (firstChar == '$' && Peek(1) == '"')) { // Interpolated string
+				// Raw interpolated string
+				else if (currentContext is RawInterpolatedStringContext ||
+					(firstChar == '$' && Peek(1) == '"' && Peek(2) == '"' && Peek(3) == '"'))
+				{
 					if (isInInterpolatedStringFormatSection) {
-						while (!(Peek(0) == '}' && Peek(1) != '}')) i += Peek(0) == '}' ? 2 : 1;
+						while (Peek(0) != '}') i++;
 						i++;
 						isInInterpolatedStringFormatSection = false;
 					}
 					else {
 						if (currentContext is NormalContext) {
-							PushContext(new InterpolatedStringContext());
+							int numberOfDollarSigns = PeekWhile(c => c == '$', reverse: true).Count();
+							i++;
+							int numberOfStartQuotes = PeekWhile(c => c == '"').Count();
+							i += numberOfStartQuotes;
+							PushContext(new RawInterpolatedStringContext(numberOfDollarSigns, numberOfStartQuotes));
+						}
+						RawInterpolatedStringContext risContext = (RawInterpolatedStringContext)currentContext;
+						bool foundStringEnd = false;
+						bool foundCodeSection = false;
+						do {
+							if (Peek(0) == '"') {
+								int charCount = PeekWhile(c => c == '"').Count();
+								if (charCount > risContext.NumberOfStartQuotes) {
+									throw new Exception("Detected raw string literal quotes mismatch.");
+								}
+								foundStringEnd = charCount == risContext.NumberOfStartQuotes;
+								i += charCount;
+							}
+							else if (Peek(0) == '{') {
+								int charCount = PeekWhile(c => c == '{').Count();
+								if (charCount >= risContext.NumberOfDollarSigns * 2) {
+									throw new Exception("Detected raw string literal interpolation brace excess.");
+								}
+								foundCodeSection = charCount >= risContext.NumberOfDollarSigns;
+								i += charCount;
+							}
+							else i++;
+						}
+						while (!foundStringEnd && !foundCodeSection);
+						if (foundCodeSection) {
+							PushContext(new NormalContext());
+						}
+						else if (foundStringEnd) {
+							PopContext();
+						}
+						else throw new InvalidOperationException();
+					}
+				}
+				// Interpolated string
+				else if (currentContext is PlainInterpolatedStringContext ||
+					(firstChar == '$' && Peek(1) == '"'))
+				{
+					if (isInInterpolatedStringFormatSection) {
+						while (Peek(0) != '}') i++;
+						i++;
+						isInInterpolatedStringFormatSection = false;
+					}
+					else {
+						if (currentContext is NormalContext) {
 							i += 2;
+							PushContext(new PlainInterpolatedStringContext());
 						}
 						bool IsEndQuote() => Peek(0) == '"';
 						bool IsCodeSection() => Peek(0) == '{' && Peek(1) != '{';
@@ -146,78 +210,125 @@ public class CodeFormatter {
 						else if (IsEndQuote()) {
 							PopContext();
 						}
+						else throw new InvalidOperationException();
 						i++;
 					}
 				}
-				else if (firstChar == '#' && i == lineSubstanceStart && contexts.Count == 1) { // Preprocessor directive
+				// Preprocessor directive
+				else if (firstChar == '#' && i == lineSubstanceStart && contexts.Count == 1) {
 					if (CodeStartsWithAnyIgnoreCase(_autoGeneratedPreprocessorDirectives)) return;
 					i++;
 					while (Peek(0) != '\n') i++;
 					line.IsPreprocessorDirective = true;
 				}
-				else if (firstChar == '/' && Peek(1) == '/') { // Single line comment
+				// Single line comment
+				else if (firstChar == '/' && Peek(1) == '/') {
 					if (CodeStartsWithAnyIgnoreCase(_autoGeneratedComments)) return;
 					line.EndsWithXmlDocComment = Peek(2) == '/' && Peek(3) != '/';
 					line.EndsWithSingleLineComment = !line.EndsWithXmlDocComment;
 					i += line.EndsWithXmlDocComment ? 3 : 2;
 					while (Peek(0) != '\n') i++;
 				}
-				else if (firstChar == '/' && Peek(1) == '*') { // Multi line comment
+				// Multi line comment
+				else if (firstChar == '/' && Peek(1) == '*') {
 					i += 2;
 					while (!(Peek(0) == '*' && Peek(1) == '/')) i++;
 					i += 2;
-					line.EndsWithMultiLineComment = Enumerable.Range(0, Int32.MaxValue).Select(n => Peek(n)).TakeWhile(c => c != '\n').Any(c => c != '\t' && c != ' ');
+					line.EndsWithMultiLineComment = PeekWhile(c => c != '\n').Any(c => c != '\t' && c != ' ');
 				}
-				else if (firstChar == '@' && Peek(1) == '"') { // Verbatim string literal
+				// Verbatim string literal
+				else if (firstChar == '@' && Peek(1) == '"') {
 					i += 2;
 					while (!(Peek(0) == '"' && Peek(1) != '"')) i += Peek(0) == '"' ? 2 : 1;
 					i++;
 				}
-				else if (firstChar == '"') { // String literal
+				// Raw string literal
+				else if (firstChar == '"' && Peek(1) == '"' && Peek(2) == '"') {
+					int numberOfStartQuotes = PeekWhile(c => c == '"').Count();
+					i+= numberOfStartQuotes;
+					bool foundStringEnd = false;
+					do {
+						if (Peek(0) == '"') {
+							int charCount = PeekWhile(c => c == '"').Count();
+							if (charCount > numberOfStartQuotes) {
+								throw new Exception("Detected raw string literal quotes mismatch.");
+							}
+							foundStringEnd = charCount == numberOfStartQuotes;
+							i += charCount;
+						}
+						else i++;
+					}
+					while (!foundStringEnd);
+				}
+				// String literal
+				else if (firstChar == '"') {
 					i++;
 					while (Peek(0) != '"') i += Peek(0) == '\\' ? 2 : 1;
 					i++;
 				}
-				else if (firstChar == '\'') { // Character literal
+				// Character literal
+				else if (firstChar == '\'') {
 					i++;
 					while (Peek(0) != '\'') i += Peek(0) == '\\' ? 2 : 1;
 					i++;
 				}
+				// Open brace. We only need to track these if we're in the code block of an interpolated
+				// string. Then when we see a close brace, we can tell if it corresponds to a prior open
+				// brace within the code block, or the initial one that began the code block. Or when we
+				// see a colon we can tell if it was something like a conditional expression inside a
+				// braced lambda body, or whether it begins the format string.
 				else if (firstChar == '{' && contexts.Count > 1) {
 					i++;
 					currentContext.BlockDepth++;
 				}
+				// Close brace
 				else if (firstChar == '}' && contexts.Count > 1) {
-					i++;
-					if (--currentContext.BlockDepth == -1) {
+					currentContext.BlockDepth--;
+					if (currentContext.BlockDepth == -1 && PreviousContext() is IInterpolatedStringContext) {
 						if (currentContext.ParenDepth != 0) {
 							throw new Exception("Detected parentheses mismatch.");
 						}
 						PopContext();
+						if (currentContext is RawInterpolatedStringContext risContext) {
+							int charCount = PeekWhile(c => c == '}').Count();
+							if (charCount >= risContext.NumberOfDollarSigns * 2) {
+								throw new Exception("Detected raw string literal interpolation brace excess.");
+							}
+							else if (charCount < risContext.NumberOfDollarSigns) {
+								throw new Exception("Detected raw string literal interpolation brace deficit.");
+							}
+							i += charCount;
+						}
+						else i++;
 					}
+					else i++;
 				}
+				// Open parenthesis. Like braces, these must be tracked sometimes to determine context.
 				else if (firstChar == '(' && contexts.Count > 1) {
 					i++;
 					currentContext.ParenDepth++;
 				}
+				// Close parenthesis
 				else if (firstChar == ')' && contexts.Count > 1) {
 					i++;
 					if (--currentContext.ParenDepth == -1) {
 						throw new Exception("Detected parentheses mismatch.");
 					}
 				}
-				else if (firstChar == ':' && currentContext.ParenDepth == 0 && (PreviousContext() is InterpolatedStringContext || PreviousContext() is VerbatimInterpolatedStringContext)) {
+				// Format section of interpolated string
+				else if (firstChar == ':' &&
+					currentContext.BlockDepth == 0 &&
+					currentContext.ParenDepth == 0 &&
+					PreviousContext() is IInterpolatedStringContext)
+				{
 					i++;
 					PopContext();
 					isInInterpolatedStringFormatSection = true;
 				}
+				// Anything else
 				else {
 					i++;
 				}
-			}
-
-			if (contexts.Count > 1 && contexts.OfType<InterpolatedStringContext>().Any()) {
-				throw new Exception("Detected incomplete interpolated string.");
 			}
 
 			line.SetSubstanceRaw(code.Substring(lineSubstanceStart, i - lineSubstanceStart));
@@ -226,7 +337,7 @@ public class CodeFormatter {
 		}
 
 		if (contexts.Count != 1) {
-			throw new Exception("Detected incomplete verbatim interpolated string.");
+			throw new Exception("Detected incomplete interpolated string.");
 		}
 
 		ProcessLines(lines);
@@ -534,9 +645,21 @@ public class CodeFormatter {
 
 	private class NormalContext : Context { }
 
-	private class InterpolatedStringContext : Context { }
+	private class PlainInterpolatedStringContext : Context, IInterpolatedStringContext { }
 
-	private class VerbatimInterpolatedStringContext : Context { }
+	private class VerbatimInterpolatedStringContext : Context, IInterpolatedStringContext { }
+
+	private class RawInterpolatedStringContext : Context, IInterpolatedStringContext {
+		public int NumberOfDollarSigns { get; }
+		public int NumberOfStartQuotes { get; }
+
+		public RawInterpolatedStringContext(int numberOfDollarSigns, int numberOfStartQuotes) {
+			NumberOfDollarSigns = numberOfDollarSigns;
+			NumberOfStartQuotes = numberOfStartQuotes;
+		}
+	}
+
+	private interface IInterpolatedStringContext { }
 
 	private enum BOMType {
 		None,
