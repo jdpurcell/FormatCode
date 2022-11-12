@@ -112,8 +112,9 @@ public class CodeFormatter {
 			while ((firstChar = Peek(0)) != '\n' || currentContext is not NormalContext) {
 				// Verbatim interpolated string
 				if (currentContext is VerbatimInterpolatedStringContext ||
-					(firstChar == '$' && Peek(1) == '@' && Peek(2) == '"') ||
-					(firstChar == '@' && Peek(1) == '$' && Peek(2) == '"'))
+					(currentContext is NormalContext &&
+					 ((firstChar == '$' && Peek(1) == '@' && Peek(2) == '"') ||
+					  (firstChar == '@' && Peek(1) == '$' && Peek(2) == '"'))))
 				{
 					if (isInInterpolatedStringFormatSection) {
 						while (Peek(0) != '}') i++;
@@ -140,7 +141,8 @@ public class CodeFormatter {
 				}
 				// Raw interpolated string
 				else if (currentContext is RawInterpolatedStringContext ||
-					(firstChar == '$' && Peek(1) == '"' && Peek(2) == '"' && Peek(3) == '"'))
+					(currentContext is NormalContext &&
+					 firstChar == '$' && Peek(1) == '"' && Peek(2) == '"' && Peek(3) == '"'))
 				{
 					if (isInInterpolatedStringFormatSection) {
 						while (Peek(0) != '}') i++;
@@ -189,7 +191,8 @@ public class CodeFormatter {
 				}
 				// Interpolated string
 				else if (currentContext is PlainInterpolatedStringContext ||
-					(firstChar == '$' && Peek(1) == '"'))
+					(currentContext is NormalContext &&
+					 firstChar == '$' && Peek(1) == '"'))
 				{
 					if (isInInterpolatedStringFormatSection) {
 						while (Peek(0) != '}') i++;
