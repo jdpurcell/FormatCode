@@ -257,14 +257,16 @@ public class CodeFormatter {
 				// braced lambda body, or whether it begins the format string.
 				else if (firstChar == '{' && contexts.Count > 1) {
 					i++;
-					currentContext.BlockDepth++;
+					currentContext.BraceDepth++;
 				}
 				// Close brace
 				else if (firstChar == '}' && contexts.Count > 1) {
-					currentContext.BlockDepth--;
-					if (currentContext.BlockDepth == -1 && PreviousContext() is IInterpolatedStringContext) {
+					currentContext.BraceDepth--;
+					if (currentContext.BraceDepth == -1 && PreviousContext() is IInterpolatedStringContext) {
 						if (currentContext.ParenDepth != 0)
-							throw new Exception("Detected parentheses mismatch.");
+							throw new Exception("Detected mismatched parentheses.");
+						if (currentContext.BracketDepth != 0)
+							throw new Exception("Detected mismatched brackets.");
 						PopContext();
 						if (currentContext is RawInterpolatedStringContext risContext) {
 							int charCount = PeekWhile(c => c == '}').Count();
@@ -279,6 +281,8 @@ public class CodeFormatter {
 					else i++;
 				}
 				// Open parenthesis. Like braces, these must be tracked sometimes to determine context.
+				// Example in which the colon does not begin a format string:
+				// string s = $"{(true ? 1 : 2)}";
 				else if (firstChar == '(' && contexts.Count > 1) {
 					i++;
 					currentContext.ParenDepth++;
@@ -287,12 +291,26 @@ public class CodeFormatter {
 				else if (firstChar == ')' && contexts.Count > 1) {
 					i++;
 					if (--currentContext.ParenDepth == -1)
-						throw new Exception("Detected parentheses mismatch.");
+						throw new Exception("Detected mismatched parentheses.");
+				}
+				// Open bracket. Like braces, these must be tracked sometimes to determine context.
+				// Example in which the colon does not begin a format string:
+				// string s = $"{"abc"[true ? 1 : 2]}";
+				else if (firstChar == '[' && contexts.Count > 1) {
+					i++;
+					currentContext.BracketDepth++;
+				}
+				// Close bracket
+				else if (firstChar == ']' && contexts.Count > 1) {
+					i++;
+					if (--currentContext.BracketDepth == -1)
+						throw new Exception("Detected mismatched brackets.");
 				}
 				// Format section of interpolated string
 				else if (firstChar == ':' &&
-					currentContext.BlockDepth == 0 &&
+					currentContext.BraceDepth == 0 &&
 					currentContext.ParenDepth == 0 &&
+					currentContext.BracketDepth == 0 &&
 					PreviousContext() is IInterpolatedStringContext)
 				{
 					i++;
@@ -622,8 +640,9 @@ public class CodeFormatter {
 	}
 
 	private abstract class Context {
-		public int BlockDepth { get; set; }
+		public int BraceDepth { get; set; }
 		public int ParenDepth { get; set; }
+		public int BracketDepth { get; set; }
 	}
 
 	private class NormalContext : Context { }
