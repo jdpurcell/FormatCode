@@ -56,7 +56,6 @@ public class CodeFormatter {
 		List<Line> lines = new();
 		Context currentContext = new NormalContext();
 		Stack<Context> contexts = new(new[] { currentContext });
-		bool isInInterpolatedStringFormatSection = false;
 
 		char Peek(int offset) {
 			const int maxSpill = 1024;
@@ -116,106 +115,83 @@ public class CodeFormatter {
 					 ((firstChar == '$' && Peek(1) == '@' && Peek(2) == '"') ||
 					  (firstChar == '@' && Peek(1) == '$' && Peek(2) == '"'))))
 				{
-					if (isInInterpolatedStringFormatSection) {
-						while (Peek(0) != '}') i++;
-						i++;
-						isInInterpolatedStringFormatSection = false;
+					if (currentContext is NormalContext) {
+						i += 3;
+						PushContext(new VerbatimInterpolatedStringContext());
 					}
-					else {
-						if (currentContext is NormalContext) {
-							i += 3;
-							PushContext(new VerbatimInterpolatedStringContext());
-						}
-						bool IsEndQuote() => Peek(0) == '"' && Peek(1) != '"';
-						bool IsCodeSection() => Peek(0) == '{' && Peek(1) != '{';
-						while (!IsEndQuote() && !IsCodeSection()) i += Peek(0) == '"' || Peek(0) == '{' ? 2 : 1;
-						if (IsCodeSection()) {
-							PushContext(new NormalContext());
-						}
-						else if (IsEndQuote()) {
-							PopContext();
-						}
-						else throw new InvalidOperationException();
-						i++;
+					bool IsEndQuote() => Peek(0) == '"' && Peek(1) != '"';
+					bool IsCodeSection() => Peek(0) == '{' && Peek(1) != '{';
+					while (!IsEndQuote() && !IsCodeSection()) i += Peek(0) == '"' || Peek(0) == '{' ? 2 : 1;
+					if (IsCodeSection()) {
+						PushContext(new NormalContext());
 					}
+					else if (IsEndQuote()) {
+						PopContext();
+					}
+					else throw new InvalidOperationException();
+					i++;
 				}
 				// Raw interpolated string
 				else if (currentContext is RawInterpolatedStringContext ||
 					(currentContext is NormalContext &&
 					 firstChar == '$' && Peek(1) == '"' && Peek(2) == '"' && Peek(3) == '"'))
 				{
-					if (isInInterpolatedStringFormatSection) {
-						while (Peek(0) != '}') i++;
+					if (currentContext is NormalContext) {
+						int numberOfDollarSigns = PeekWhile(c => c == '$', reverse: true).Count();
 						i++;
-						isInInterpolatedStringFormatSection = false;
+						int numberOfStartQuotes = PeekWhile(c => c == '"').Count();
+						i += numberOfStartQuotes;
+						PushContext(new RawInterpolatedStringContext(numberOfDollarSigns, numberOfStartQuotes));
 					}
-					else {
-						if (currentContext is NormalContext) {
-							int numberOfDollarSigns = PeekWhile(c => c == '$', reverse: true).Count();
-							i++;
-							int numberOfStartQuotes = PeekWhile(c => c == '"').Count();
-							i += numberOfStartQuotes;
-							PushContext(new RawInterpolatedStringContext(numberOfDollarSigns, numberOfStartQuotes));
+					RawInterpolatedStringContext risContext = (RawInterpolatedStringContext)currentContext;
+					bool foundStringEnd = false;
+					bool foundCodeSection = false;
+					do {
+						if (Peek(0) == '"') {
+							int charCount = PeekWhile(c => c == '"').Count();
+							if (charCount > risContext.NumberOfStartQuotes)
+								throw new Exception("Detected raw string literal quotes mismatch.");
+							foundStringEnd = charCount == risContext.NumberOfStartQuotes;
+							i += charCount;
 						}
-						RawInterpolatedStringContext risContext = (RawInterpolatedStringContext)currentContext;
-						bool foundStringEnd = false;
-						bool foundCodeSection = false;
-						do {
-							if (Peek(0) == '"') {
-								int charCount = PeekWhile(c => c == '"').Count();
-								if (charCount > risContext.NumberOfStartQuotes) {
-									throw new Exception("Detected raw string literal quotes mismatch.");
-								}
-								foundStringEnd = charCount == risContext.NumberOfStartQuotes;
-								i += charCount;
-							}
-							else if (Peek(0) == '{') {
-								int charCount = PeekWhile(c => c == '{').Count();
-								if (charCount >= risContext.NumberOfDollarSigns * 2) {
-									throw new Exception("Detected raw string literal interpolation brace excess.");
-								}
-								foundCodeSection = charCount >= risContext.NumberOfDollarSigns;
-								i += charCount;
-							}
-							else i++;
+						else if (Peek(0) == '{') {
+							int charCount = PeekWhile(c => c == '{').Count();
+							if (charCount >= risContext.NumberOfDollarSigns * 2)
+								throw new Exception("Detected raw string literal interpolation brace excess.");
+							foundCodeSection = charCount >= risContext.NumberOfDollarSigns;
+							i += charCount;
 						}
-						while (!foundStringEnd && !foundCodeSection);
-						if (foundCodeSection) {
-							PushContext(new NormalContext());
-						}
-						else if (foundStringEnd) {
-							PopContext();
-						}
-						else throw new InvalidOperationException();
+						else i++;
 					}
+					while (!foundStringEnd && !foundCodeSection);
+					if (foundCodeSection) {
+						PushContext(new NormalContext());
+					}
+					else if (foundStringEnd) {
+						PopContext();
+					}
+					else throw new InvalidOperationException();
 				}
 				// Interpolated string
 				else if (currentContext is PlainInterpolatedStringContext ||
 					(currentContext is NormalContext &&
 					 firstChar == '$' && Peek(1) == '"'))
 				{
-					if (isInInterpolatedStringFormatSection) {
-						while (Peek(0) != '}') i++;
-						i++;
-						isInInterpolatedStringFormatSection = false;
+					if (currentContext is NormalContext) {
+						i += 2;
+						PushContext(new PlainInterpolatedStringContext());
 					}
-					else {
-						if (currentContext is NormalContext) {
-							i += 2;
-							PushContext(new PlainInterpolatedStringContext());
-						}
-						bool IsEndQuote() => Peek(0) == '"';
-						bool IsCodeSection() => Peek(0) == '{' && Peek(1) != '{';
-						while (!IsEndQuote() && !IsCodeSection()) i += Peek(0) == '\\' || Peek(0) == '{' ? 2 : 1;
-						if (IsCodeSection()) {
-							PushContext(new NormalContext());
-						}
-						else if (IsEndQuote()) {
-							PopContext();
-						}
-						else throw new InvalidOperationException();
-						i++;
+					bool IsEndQuote() => Peek(0) == '"';
+					bool IsCodeSection() => Peek(0) == '{' && Peek(1) != '{';
+					while (!IsEndQuote() && !IsCodeSection()) i += Peek(0) == '\\' || Peek(0) == '{' ? 2 : 1;
+					if (IsCodeSection()) {
+						PushContext(new NormalContext());
 					}
+					else if (IsEndQuote()) {
+						PopContext();
+					}
+					else throw new InvalidOperationException();
+					i++;
 				}
 				// Preprocessor directive
 				else if (firstChar == '#' && i == lineSubstanceStart && contexts.Count == 1) {
@@ -253,9 +229,8 @@ public class CodeFormatter {
 					do {
 						if (Peek(0) == '"') {
 							int charCount = PeekWhile(c => c == '"').Count();
-							if (charCount > numberOfStartQuotes) {
+							if (charCount > numberOfStartQuotes)
 								throw new Exception("Detected raw string literal quotes mismatch.");
-							}
 							foundStringEnd = charCount == numberOfStartQuotes;
 							i += charCount;
 						}
@@ -288,18 +263,15 @@ public class CodeFormatter {
 				else if (firstChar == '}' && contexts.Count > 1) {
 					currentContext.BlockDepth--;
 					if (currentContext.BlockDepth == -1 && PreviousContext() is IInterpolatedStringContext) {
-						if (currentContext.ParenDepth != 0) {
+						if (currentContext.ParenDepth != 0)
 							throw new Exception("Detected parentheses mismatch.");
-						}
 						PopContext();
 						if (currentContext is RawInterpolatedStringContext risContext) {
 							int charCount = PeekWhile(c => c == '}').Count();
-							if (charCount >= risContext.NumberOfDollarSigns * 2) {
+							if (charCount >= risContext.NumberOfDollarSigns * 2)
 								throw new Exception("Detected raw string literal interpolation brace excess.");
-							}
-							else if (charCount < risContext.NumberOfDollarSigns) {
+							if (charCount < risContext.NumberOfDollarSigns)
 								throw new Exception("Detected raw string literal interpolation brace deficit.");
-							}
 							i += charCount;
 						}
 						else i++;
@@ -314,9 +286,8 @@ public class CodeFormatter {
 				// Close parenthesis
 				else if (firstChar == ')' && contexts.Count > 1) {
 					i++;
-					if (--currentContext.ParenDepth == -1) {
+					if (--currentContext.ParenDepth == -1)
 						throw new Exception("Detected parentheses mismatch.");
-					}
 				}
 				// Format section of interpolated string
 				else if (firstChar == ':' &&
@@ -326,7 +297,16 @@ public class CodeFormatter {
 				{
 					i++;
 					PopContext();
-					isInInterpolatedStringFormatSection = true;
+					while (Peek(0) != '}') i++;
+					if (currentContext is RawInterpolatedStringContext risContext) {
+						int charCount = PeekWhile(c => c == '}').Count();
+						if (charCount >= risContext.NumberOfDollarSigns * 2)
+							throw new Exception("Detected raw string literal interpolation brace excess.");
+						if (charCount < risContext.NumberOfDollarSigns)
+							throw new Exception("Detected raw string literal interpolation brace deficit.");
+						i += charCount;
+					}
+					else i++;
 				}
 				// Anything else
 				else {
