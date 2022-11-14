@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.33103.184
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FormatCode", "FormatCode.csproj", "{4F9D7E77-C5F4-4877-B8EB-37C3829FBADF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FormatCode.WinForms", "FormatCode.WinForms\FormatCode.WinForms.csproj", "{4F9D7E77-C5F4-4877-B8EB-37C3829FBADF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FormatCode.Library", "FormatCode.Library\FormatCode.Library.csproj", "{7E05A947-E90D-43B7-919E-C0B62F06C287}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{4F9D7E77-C5F4-4877-B8EB-37C3829FBADF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4F9D7E77-C5F4-4877-B8EB-37C3829FBADF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4F9D7E77-C5F4-4877-B8EB-37C3829FBADF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7E05A947-E90D-43B7-919E-C0B62F06C287}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7E05A947-E90D-43B7-919E-C0B62F06C287}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7E05A947-E90D-43B7-919E-C0B62F06C287}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7E05A947-E90D-43B7-919E-C0B62F06C287}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

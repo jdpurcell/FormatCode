@@ -1,4 +1,4 @@
-﻿namespace FormatCode {
+﻿namespace FormatCode.WinForms {
 	partial class frmMain {
 		/// <summary>
 		/// Required designer variable.

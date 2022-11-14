@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
 
-namespace FormatCode;
+namespace FormatCode.WinForms;
 
 public static class ExtensionMethods {
 	public static object Invoke(this Control control, Action action) {

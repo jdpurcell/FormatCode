@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
 
-namespace FormatCode;
+namespace FormatCode.WinForms;
 
 static class Program {
 	[STAThread]

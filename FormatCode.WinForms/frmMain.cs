@@ -3,6 +3,7 @@
 //
 // Licensed under the MIT License (see LICENSE.txt)
 // --------------------------------------------------------------------------------
+using FormatCode.Library;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,7 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace FormatCode;
+namespace FormatCode.WinForms;
 
 public partial class frmMain : Form {
 	private static readonly string[] _ignoreNames = {  };
