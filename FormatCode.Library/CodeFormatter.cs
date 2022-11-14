@@ -29,6 +29,8 @@ public class CodeFormatter {
 
 	public NewLineStyle NewLineStyle { get; set; } = NewLineStyle.Detect;
 
+	public Encoding FallbackEncoding { get; set; } = Encoding.Default;
+
 	public bool RequireNewLineAtEnd { get; set; }
 
 	public bool LeaveTrailingWhitespaceInCode { get; set; }
@@ -40,7 +42,7 @@ public class CodeFormatter {
 	public void Format(string path) {
 		const char bomChar = '\uFEFF';
 		byte[] codeBytes = File.ReadAllBytes(path);
-		Encoding encoding = DetectEncoding(codeBytes) ?? Encoding.Default;
+		Encoding encoding = DetectEncoding(codeBytes) ?? FallbackEncoding;
 		string codeStrRaw = encoding.GetString(codeBytes);
 		if (!AreByteArraysEqual(codeBytes, encoding.GetBytes(codeStrRaw))) {
 			throw new Exception("Misdetected character encoding!");

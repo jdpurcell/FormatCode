@@ -3,9 +3,9 @@
 <plist version="1.0">
   <dict>
     <key>CFBundleName</key>
-    <string>FormatCode.EtoForms</string>
+    <string>FormatCode</string>
     <key>CFBundleIdentifier</key>
-    <string>com.example.FormatCode.EtoForms</string>
+    <string>com.example.FormatCode</string>
     <key>CFBundleShortVersionString</key>
     <string>1.0</string>
     <key>LSMinimumSystemVersion</key>

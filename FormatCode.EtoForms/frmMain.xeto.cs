@@ -4,6 +4,7 @@ using FormatCode.Library;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace FormatCode.EtoForms;
 
@@ -16,6 +17,10 @@ public class frmMain : Form {
 	private CheckBox chkRequireNewLineAtEnd;
 	private Label lblInstructions;
 	private Label lblStatus;
+
+	static frmMain() {
+		Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+	}
 
 	public frmMain() {
 		XamlReader.Load(this);
@@ -49,6 +54,7 @@ public class frmMain : Form {
 			TabStyle = Enum.Parse<TabStyle>(rblTabStyle.SelectedKey),
 			OpenBraceStyle = Enum.Parse<OpenBraceStyle>(rblOpenBraceStyle.SelectedKey),
 			NewLineStyle = Enum.Parse<NewLineStyle>(rblNewLineStyle.SelectedKey),
+			FallbackEncoding = Encoding.GetEncoding(1252),
 			RequireNewLineAtEnd = chkRequireNewLineAtEnd.Checked.Value
 		};
 		slMain.Enabled = false;

@@ -231,7 +231,7 @@
 			this.MaximizeBox = false;
 			this.Name = "frmMain";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-			this.Text = "Code Formatter";
+			this.Text = "FormatCode";
 			this.TopMost = true;
 			this.DragDrop += new System.Windows.Forms.DragEventHandler(this.frmMain_DragDrop);
 			this.DragEnter += new System.Windows.Forms.DragEventHandler(this.frmMain_DragEnter);

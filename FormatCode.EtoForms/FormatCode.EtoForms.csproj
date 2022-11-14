@@ -1,6 +1,8 @@
-﻿<Project Sdk="Eto.Forms/2.7.1">
+﻿<Project Sdk="Eto.Forms/2.7.2">
   <PropertyGroup>
     <UseXeto>True</UseXeto>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>FormatCode</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
     <TargetFramework>net6.0-windows</TargetFramework>
@@ -12,5 +14,8 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\FormatCode.Library\FormatCode.Library.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Text.Encoding.CodePages" Version="7.0.0" />
   </ItemGroup>
 </Project>
