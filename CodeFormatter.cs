@@ -25,7 +25,7 @@ public class CodeFormatter {
 
 	public TabStyle TabStyle { get; set; } = TabStyle.Tabs;
 
-	public OpenBraceStyle OpenBraceStyle { get; set; } = OpenBraceStyle.LeaveAlone;
+	public OpenBraceStyle OpenBraceStyle { get; set; } = OpenBraceStyle.Leave;
 
 	public bool RequireNewLineAtEnd { get; set; }
 
@@ -685,7 +685,7 @@ public enum TabStyle {
 }
 
 public enum OpenBraceStyle {
-	LeaveAlone,
+	Leave,
 	MoveUp,
 	MoveDown
 }

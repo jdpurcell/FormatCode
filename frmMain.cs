@@ -39,7 +39,7 @@ public partial class frmMain : Form {
 			OpenBraceStyle =
 				rbOpenBracesMoveDown.Checked ? OpenBraceStyle.MoveDown :
 				rbOpenBracesMoveUp.Checked ? OpenBraceStyle.MoveUp :
-				OpenBraceStyle.LeaveAlone,
+				OpenBraceStyle.Leave,
 			RequireNewLineAtEnd = chkRequireNewLineAtEnd.Checked,
 			PreserveNewLineType = chkPreserveNewLineType.Checked
 		};
