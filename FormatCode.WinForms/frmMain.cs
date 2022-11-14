@@ -37,8 +37,8 @@ public partial class frmMain : Form {
 				rbOpenBracesMoveDown.Checked ? OpenBraceStyle.MoveDown :
 				rbOpenBracesMoveUp.Checked ? OpenBraceStyle.MoveUp :
 				OpenBraceStyle.Leave,
-			RequireNewLineAtEnd = chkRequireNewLineAtEnd.Checked,
-			PreserveNewLineType = chkPreserveNewLineType.Checked
+			NewLineStyle = chkPreserveNewLineType.Checked ? NewLineStyle.Detect : NewLineStyle.MatchPlatform,
+			RequireNewLineAtEnd = chkRequireNewLineAtEnd.Checked
 		};
 		Application.UseWaitCursor = true;
 		panMain.Enabled = false;

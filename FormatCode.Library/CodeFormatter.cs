@@ -23,13 +23,13 @@ public class CodeFormatter {
 
 	public int TabSize { get; set; } = 4;
 
-	public TabStyle TabStyle { get; set; } = TabStyle.Tabs;
+	public TabStyle TabStyle { get; set; } = TabStyle.Detect;
 
 	public OpenBraceStyle OpenBraceStyle { get; set; } = OpenBraceStyle.Leave;
 
-	public bool RequireNewLineAtEnd { get; set; }
+	public NewLineStyle NewLineStyle { get; set; } = NewLineStyle.Detect;
 
-	public bool PreserveNewLineType { get; set; }
+	public bool RequireNewLineAtEnd { get; set; }
 
 	public bool LeaveTrailingWhitespaceInCode { get; set; }
 
@@ -45,12 +45,14 @@ public class CodeFormatter {
 		if (!AreByteArraysEqual(codeBytes, encoding.GetBytes(codeStrRaw))) {
 			throw new Exception("Misdetected character encoding!");
 		}
-		string code = NormalizeNewLines(codeStrRaw, out NewLineType inputNewLineType);
-		string outputNewLine = !PreserveNewLineType ? Environment.NewLine :
-			inputNewLineType == NewLineType.CRLF ? "\r\n" :
-			inputNewLineType == NewLineType.LF ? "\n" :
-			inputNewLineType == NewLineType.CR ? "\r" :
-			Environment.NewLine;
+		string code = NormalizeNewLines(codeStrRaw, out string inputNewLine);
+		string outputNewLine = NewLineStyle switch {
+			NewLineStyle.MatchPlatform => Environment.NewLine,
+			NewLineStyle.CRLF => "\r\n",
+			NewLineStyle.LF => "\n",
+			NewLineStyle.CR => "\r",
+			_ => inputNewLine ?? Environment.NewLine
+		};
 		bool fileEndsWithLineEnd = code.Length >= 1 && code[code.Length - 1] == '\n';
 		int i = 0;
 		List<Line> lines = new();
@@ -525,7 +527,7 @@ public class CodeFormatter {
 		return sawUTF8Sequence;
 	}
 
-	private static string NormalizeNewLines(string src, out NewLineType detectedNewLineType) {
+	private static string NormalizeNewLines(string src, out string detectedNewLine) {
 		char[] dst = new char[src.Length];
 		int iDst = 0;
 		int crlfCount = 0;
@@ -551,15 +553,15 @@ public class CodeFormatter {
 			}
 		}
 		var stats = new[] {
-			new { Type = NewLineType.CRLF, Count = crlfCount },
-			new { Type = NewLineType.LF, Count = lfCount },
-			new { Type = NewLineType.CR, Count = crCount }
+			new { Type = "\r\n", Count = crlfCount },
+			new { Type = "\n", Count = lfCount },
+			new { Type = "\r", Count = crCount }
 		};
-		detectedNewLineType =
+		detectedNewLine =
 			(from s in stats
 			 where s.Count != 0
 			 orderby s.Count descending
-			 select s.Type).DefaultIfEmpty(NewLineType.None).First();
+			 select s.Type).FirstOrDefault();
 		return new string(dst, 0, iDst);
 	}
 
@@ -669,23 +671,24 @@ public class CodeFormatter {
 		UTF16LE,
 		UTF16BE
 	}
-
-	private enum NewLineType {
-		None,
-		CRLF,
-		LF,
-		CR
-	}
 }
 
 public enum TabStyle {
+	Detect,
 	Tabs,
-	Spaces,
-	Detect
+	Spaces
 }
 
 public enum OpenBraceStyle {
 	Leave,
 	MoveUp,
 	MoveDown
+}
+
+public enum NewLineStyle {
+	Detect,
+	MatchPlatform,
+	CRLF,
+	LF,
+	CR
 }

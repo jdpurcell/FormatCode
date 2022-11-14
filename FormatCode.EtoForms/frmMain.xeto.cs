@@ -12,8 +12,8 @@ public class frmMain : Form {
 	private TextBox txtTabSize;
 	private RadioButtonList rblTabStyle;
 	private RadioButtonList rblOpenBraceStyle;
+	private RadioButtonList rblNewLineStyle;
 	private CheckBox chkRequireNewLineAtEnd;
-	private CheckBox chkPreserveNewLineType;
 	private Label lblInstructions;
 	private Label lblStatus;
 
@@ -28,8 +28,9 @@ public class frmMain : Form {
 		}
 
 		txtTabSize.Text = "4";
-		rblTabStyle.SelectedKey = TabStyle.Tabs.ToString();
+		rblTabStyle.SelectedKey = TabStyle.Detect.ToString();
 		rblOpenBraceStyle.SelectedKey = OpenBraceStyle.Leave.ToString();
+		rblNewLineStyle.SelectedKey = NewLineStyle.Detect.ToString();
 	}
 
 	private void slMain_DragEnter(object sender, DragEventArgs e) {
@@ -47,8 +48,8 @@ public class frmMain : Form {
 			TabSize = Int32.Parse(txtTabSize.Text),
 			TabStyle = Enum.Parse<TabStyle>(rblTabStyle.SelectedKey),
 			OpenBraceStyle = Enum.Parse<OpenBraceStyle>(rblOpenBraceStyle.SelectedKey),
-			RequireNewLineAtEnd = chkRequireNewLineAtEnd.Checked.Value,
-			PreserveNewLineType = chkPreserveNewLineType.Checked.Value
+			NewLineStyle = Enum.Parse<NewLineStyle>(rblNewLineStyle.SelectedKey),
+			RequireNewLineAtEnd = chkRequireNewLineAtEnd.Checked.Value
 		};
 		slMain.Enabled = false;
 		lblInstructions.Visible = false;

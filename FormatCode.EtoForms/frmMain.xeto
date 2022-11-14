@@ -16,9 +16,9 @@
 					<TextBox x:Name="txtTabSize" Width="30"></TextBox>
 				</StackLayout>
 				<RadioButtonList x:Name="rblTabStyle" Orientation="Horizontal" Spacing="10,8" Padding="0,8,0,0">
+					<ListItem Key="Detect">Detect</ListItem>
 					<ListItem Key="Tabs">Tabs</ListItem>
 					<ListItem Key="Spaces">Spaces</ListItem>
-					<ListItem Key="Detect">Detect</ListItem>
 				</RadioButtonList>
 			</StackLayout>
 		</GroupBox>
@@ -29,9 +29,15 @@
 				<ListItem Key="MoveUp">Move Up</ListItem>
 			</RadioButtonList>
 		</GroupBox>
+		<GroupBox Text="Newlines" Padding="6">
+			<RadioButtonList x:Name="rblNewLineStyle" Orientation="Horizontal" Spacing="10,8">
+				<ListItem Key="Detect">Detect</ListItem>
+				<ListItem Key="CRLF">CR/LF</ListItem>
+				<ListItem Key="LF">LF</ListItem>
+			</RadioButtonList>
+		</GroupBox>
 		<StackLayout Orientation="Vertical" Spacing="8" Padding="0,4,0,0">
 			<CheckBox x:Name="chkRequireNewLineAtEnd">Require newline at end of file</CheckBox>
-			<CheckBox x:Name="chkPreserveNewLineType">Preserve newline type</CheckBox>
 		</StackLayout>
 		<StackLayoutItem HorizontalAlignment="Center">
 			<StackLayout Orientation="Vertical">
