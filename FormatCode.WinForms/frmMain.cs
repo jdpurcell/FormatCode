@@ -5,20 +5,11 @@
 // --------------------------------------------------------------------------------
 using FormatCode.Library;
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace FormatCode.WinForms;
 
 public partial class frmMain : Form {
-	private static readonly string[] _ignoreNames = {  };
-	private static readonly string[] _ignoreSuffixes = {  };
-	private static readonly string[] _ignoreDirectories = {  };
-
 	public frmMain() {
 		InitializeComponent();
 	}
@@ -31,6 +22,10 @@ public partial class frmMain : Form {
 
 	private void frmMain_DragDrop(object sender, DragEventArgs e) {
 		if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
+		Run((string[])e.Data.GetData(DataFormats.FileDrop));
+	}
+
+	private void Run(string[] dirsAndFiles) {
 		CodeFormatter formatter = new() {
 			TabSize = Int32.Parse(txtTabSize.Text),
 			TabStyle =
@@ -44,68 +39,17 @@ public partial class frmMain : Form {
 			RequireNewLineAtEnd = chkRequireNewLineAtEnd.Checked,
 			PreserveNewLineType = chkPreserveNewLineType.Checked
 		};
-		string[] dirsAndFiles = (string[])e.Data.GetData(DataFormats.FileDrop);
-		FormatCode(formatter, EnumerateCodeFiles(dirsAndFiles));
-	}
-
-	private static IEnumerable<string> EnumerateCodeFiles(string[] dirsAndFiles) {
-		bool IsExcluded(string path) =>
-			!Path.GetExtension(path).Equals(".cs", StringComparison.OrdinalIgnoreCase) ||
-			_ignoreNames.Any(n => Path.GetFileName(path).Equals(n, StringComparison.OrdinalIgnoreCase)) ||
-			_ignoreSuffixes.Any(s => path.EndsWith(s, StringComparison.OrdinalIgnoreCase)) ||
-			_ignoreDirectories.Any(d => path.IndexOf($@"\{d}\", StringComparison.OrdinalIgnoreCase) != -1);
-
-		foreach (string path in dirsAndFiles) {
-			if (File.Exists(path) && !IsExcluded(path)) {
-				yield return path;
-			}
-			else if (Directory.Exists(path)) {
-				foreach (string filePath in Directory.EnumerateFiles(path, "*.cs", SearchOption.AllDirectories)) {
-					if (!IsExcluded(filePath)) {
-						yield return filePath;
-					}
-				}
-			}
+		Application.UseWaitCursor = true;
+		panMain.Enabled = false;
+		lblInstructions.Visible = false;
+		lblStatus.Visible = true;
+		lblStatus.Text = "";
+		void OnProgress(int processedCount) {
+			this.BeginInvoke(() => {
+				lblStatus.Text = $"Processed {processedCount:#,##0} files.";
+			});
 		}
-	}
-
-	private void FormatCode(CodeFormatter formatter, IEnumerable<string> paths) {
-		void Run() {
-			object syncObj = new();
-			int processedCount = 0;
-			TimeSpan uiUpdateInterval = TimeSpan.FromMilliseconds(15);
-			DateTime nextUIUpdateTime = DateTime.UtcNow;
-			void Process(string path) {
-				try {
-					formatter.Format(path);
-				}
-				catch (Exception ex) {
-					throw new Exception($"{path}\r\n\r\n{ex.Message}");
-				}
-				string newStatus = null;
-				lock (syncObj) {
-					processedCount++;
-					DateTime timeNow = DateTime.UtcNow;
-					if (timeNow >= nextUIUpdateTime) {
-						newStatus = $"Processed {processedCount:#,##0} files.";
-						nextUIUpdateTime = timeNow + uiUpdateInterval;
-					}
-				}
-				if (newStatus != null) {
-					this.Invoke(() => {
-						lblStatus.Text = newStatus;
-					});
-				}
-			}
-
-			string errorMessage = null;
-			try {
-				Parallel.ForEach(paths, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, Process);
-			}
-			catch (AggregateException ae) {
-				errorMessage = ae.InnerException?.Message ?? "(Empty AggregateException)";
-			}
-
+		void OnComplete(string errorMessage) {
 			this.BeginInvoke(() => {
 				Application.UseWaitCursor = false;
 				Activate();
@@ -120,11 +64,6 @@ public partial class frmMain : Form {
 				lblInstructions.Visible = true;
 			});
 		}
-		Application.UseWaitCursor = true;
-		panMain.Enabled = false;
-		lblInstructions.Visible = false;
-		lblStatus.Visible = true;
-		lblStatus.Text = "";
-		new Thread(Run).Start();
+		BatchCodeFormatter.BeginRun(formatter, CodeFileFinder.Find(dirsAndFiles), OnProgress, OnComplete);
 	}
 }
