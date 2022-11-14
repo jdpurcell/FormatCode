@@ -10,12 +10,13 @@ public static class CodeFileFinder {
 	private static readonly string[] _ignoreSuffixes = { };
 	private static readonly string[] _ignoreDirectories = { "obj" };
 
-	public static IEnumerable<string> Find(string[] dirsAndFiles) {
+	public static IEnumerable<string> Find(IList<string> dirsAndFiles) {
+		char dirSep = Path.DirectorySeparatorChar;
 		bool IsExcluded(string path) =>
 			!Path.GetExtension(path).Equals(".cs", StringComparison.OrdinalIgnoreCase) ||
 			_ignoreNames.Any(n => Path.GetFileName(path).Equals(n, StringComparison.OrdinalIgnoreCase)) ||
 			_ignoreSuffixes.Any(s => path.EndsWith(s, StringComparison.OrdinalIgnoreCase)) ||
-			_ignoreDirectories.Any(d => path.IndexOf($@"\{d}\", StringComparison.OrdinalIgnoreCase) != -1);
+			_ignoreDirectories.Any(d => path.IndexOf(dirSep + d + dirSep, StringComparison.OrdinalIgnoreCase) != -1);
 
 		foreach (string path in dirsAndFiles) {
 			if (File.Exists(path) && !IsExcluded(path)) {

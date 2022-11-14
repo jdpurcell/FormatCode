@@ -5,6 +5,7 @@
 // --------------------------------------------------------------------------------
 using FormatCode.Library;
 using System;
+using System.Collections.Generic;
 using System.Windows.Forms;
 
 namespace FormatCode.WinForms;
@@ -25,7 +26,7 @@ public partial class frmMain : Form {
 		Run((string[])e.Data.GetData(DataFormats.FileDrop));
 	}
 
-	private void Run(string[] dirsAndFiles) {
+	private void Run(IList<string> dirsAndFiles) {
 		CodeFormatter formatter = new() {
 			TabSize = Int32.Parse(txtTabSize.Text),
 			TabStyle =

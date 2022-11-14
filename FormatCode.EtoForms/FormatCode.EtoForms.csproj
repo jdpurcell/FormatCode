@@ -1,0 +1,16 @@
+﻿<Project Sdk="Eto.Forms/2.7.1">
+  <PropertyGroup>
+    <UseXeto>True</UseXeto>
+  </PropertyGroup>
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <BuildPlatform>Wpf</BuildPlatform>
+  </PropertyGroup>
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('OSX'))">
+    <TargetFramework>net6.0-macos</TargetFramework>
+    <BuildPlatform>macOS</BuildPlatform>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\FormatCode.Library\FormatCode.Library.csproj" />
+  </ItemGroup>
+</Project>

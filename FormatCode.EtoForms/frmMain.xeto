@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Form
+	xmlns="http://schema.picoe.ca/eto.forms" 
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:local="clr-namespace:FormatCode.EtoForms;assembly=FormatCode.EtoForms"
+	Title="Code Formatter"
+	Resizable="False"
+	Maximizable="False"
+	Topmost="True"
+	>
+	<StackLayout x:Name="slMain" Orientation="Vertical" Padding="10" Spacing="12" AllowDrop="True">
+		<GroupBox Text="Tabs" Padding="6">
+			<StackLayout Orientation="Vertical">
+				<StackLayout Orientation="Horizontal" VerticalContentAlignment="Center" Spacing="10">
+					<Label>Size:</Label>
+					<TextBox x:Name="txtTabSize" Width="30"></TextBox>
+				</StackLayout>
+				<RadioButtonList x:Name="rblTabStyle" Orientation="Horizontal" Spacing="10,8" Padding="0,8,0,0">
+					<ListItem Key="Tabs">Tabs</ListItem>
+					<ListItem Key="Spaces">Spaces</ListItem>
+					<ListItem Key="Detect">Detect</ListItem>
+				</RadioButtonList>
+			</StackLayout>
+		</GroupBox>
+		<GroupBox Text="Open Braces" Padding="6">
+			<RadioButtonList x:Name="rblOpenBraceStyle" Orientation="Horizontal" Spacing="10,8">
+				<ListItem Key="Leave">Leave</ListItem>
+				<ListItem Key="MoveDown">Move Down</ListItem>
+				<ListItem Key="MoveUp">Move Up</ListItem>
+			</RadioButtonList>
+		</GroupBox>
+		<StackLayout Orientation="Vertical" Spacing="8" Padding="0,4,0,0">
+			<CheckBox x:Name="chkRequireNewLineAtEnd">Require newline at end of file</CheckBox>
+			<CheckBox x:Name="chkPreserveNewLineType">Preserve newline type</CheckBox>
+		</StackLayout>
+		<StackLayoutItem HorizontalAlignment="Center">
+			<StackLayout Orientation="Vertical">
+				<Label x:Name="lblInstructions">Drop files/folders here.</Label>
+				<Label x:Name="lblStatus" Visible="False"></Label>
+			</StackLayout>
+		</StackLayoutItem>
+	</StackLayout>
+</Form>
