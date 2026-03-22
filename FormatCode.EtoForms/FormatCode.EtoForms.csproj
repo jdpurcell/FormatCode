@@ -1,21 +1,28 @@
-﻿<Project Sdk="Eto.Forms/2.7.2">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <UseXeto>True</UseXeto>
     <LangVersion>latest</LangVersion>
     <AssemblyName>FormatCode</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
-    <TargetFramework>net6.0-windows</TargetFramework>
-    <BuildPlatform>Wpf</BuildPlatform>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <OutputType>WinExe</OutputType>
+    <UseWPF>True</UseWPF>
   </PropertyGroup>
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('OSX'))">
-    <TargetFramework>net6.0-macos</TargetFramework>
-    <BuildPlatform>macOS</BuildPlatform>
+    <TargetFramework>net10.0-macos</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <ValidateXcodeVersion>False</ValidateXcodeVersion>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\FormatCode.Library\FormatCode.Library.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="System.Text.Encoding.CodePages" Version="7.0.0" />
+    <PackageReference Include="Eto.Forms" Version="2.11.0" />
+  </ItemGroup>
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+    <PackageReference Include="Eto.Platform.Wpf" Version="2.11.0" />
+  </ItemGroup>
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('OSX'))">
+    <PackageReference Include="Eto.Platform.macOS" Version="2.11.0" />
   </ItemGroup>
 </Project>

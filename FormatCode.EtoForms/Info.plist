@@ -8,8 +8,6 @@
     <string>com.example.FormatCode</string>
     <key>CFBundleShortVersionString</key>
     <string>1.0</string>
-    <key>LSMinimumSystemVersion</key>
-    <string>10.14</string>
     <key>CFBundleDevelopmentRegion</key>
     <string>en</string>
     <key>NSHumanReadableCopyright</key>
